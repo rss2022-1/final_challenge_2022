@@ -22,7 +22,7 @@ class PurePursuit(object):
     def __init__(self):
         # Constants
         # TODO: Tune these parameters for pixel values
-        self.speed = 3.9
+        self.speed = 4.0
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
         self.px_lookahead = 200
