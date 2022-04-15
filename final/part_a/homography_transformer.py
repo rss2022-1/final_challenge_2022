@@ -70,7 +70,7 @@ class HomographyTransformer:
 
     def line_point_cb(self, msg):
         #Extract information from message
-        rospy.loginfo("Received message")
+        #rospy.loginfo("Received message")
         u = msg.x
         v = msg.y
 
@@ -82,7 +82,7 @@ class HomographyTransformer:
         relative_xy_msg.x = x
         relative_xy_msg.y = y
         relative_xy_msg.z = 0.0
-        rospy.loginfo(relative_xy_msg)
+        #rospy.loginfo(relative_xy_msg)
 
         self.lookahead_point_pub.publish(relative_xy_msg)
         self.draw_marker(x, y, "map")

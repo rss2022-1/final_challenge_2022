@@ -22,10 +22,10 @@ class PurePursuit(object):
     def __init__(self):
         # Constants
         # TODO: Tune these parameters for pixel values
-        self.speed = 2.0
+        self.speed = 3.5
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
-        self.px_lookahead = 230
+        self.px_lookahead = 200
         self.wrap = 0
         self.wheelbase_length = 0.35
         self.p = .8
@@ -34,7 +34,7 @@ class PurePursuit(object):
         self.bridge = CvBridge()
 
         # Subscribers and publishers
-        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
+        self.drive_pub = rospy.Publisher("/vesc/high_level/ackermann_cmd_mux/input/nav_1", AckermannDriveStamped, queue_size=1)
         self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
         self.debug_pub = rospy.Publisher("/lane_debug_img", Image, queue_size=10)
         self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
@@ -113,7 +113,7 @@ class PurePursuit(object):
                 pixel_epsilon = 80
                 scaled_v = 200 * (v / np.linalg.norm(v))
                 # Delete lines that are too horizontal
-                if np.abs(th) < .15:
+                if np.abs(th) < .15 or np.abs(th) > 1.37:
                     continue
                 # Delete lines that are similar to previous lines
                 if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
@@ -121,7 +121,7 @@ class PurePursuit(object):
                 # new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
                 prev_lines.append([th, x1, y1, x2, y2, scaled_v])
                 cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
-        return cdstP, np.array(prev_lines)
+        return cdstP, prev_lines
 
     def find_lookahead_point(self, lane_segments):
         """
@@ -131,7 +131,7 @@ class PurePursuit(object):
         # TODO: find the lookahead point by looping through all line segments and finding the intersections and
         # averaging them.
         if len(lane_segments) == 0:
-            print("No lane segments found")
+            #print("No lane segments found")
             return (0,0,0)
         lookahead_line = self.line((0, self.px_lookahead), (1000, self.px_lookahead))
         intersections = []
@@ -140,19 +140,20 @@ class PurePursuit(object):
             x, y = self.intersection(lookahead_line, l)
             intersections.append((x, y))
         if len(intersections) == 1:
-            print("One intersection found")
+            #print("One intersection found")
+            #rospy.loginfo("one intersection")
             x = intersections[0][0]
             if x < self.img_width / 2:
                 # Left lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x += 0
+                x += 4
             else:
                 # Right lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x -= 0
+                x -= 4
             return (x, self.px_lookahead, 0)
         else:
-            print(str(len(intersections)) + " intersections found")
+            #print(str(len(intersections)) + " intersections found")
             return (int((intersections[0][0] + intersections[1][0])/2.), self.px_lookahead, 0)
 
     def compute_steering_angle(self, lookahead_point):
@@ -160,7 +161,7 @@ class PurePursuit(object):
         '''
         # Compute eta - use a dot b = |a|*|b|*cos(eta) where a is our forward velocity and
         # b is the vector from the robot to the lookahead point
-        rospy.loginfo(lookahead_point)
+        #rospy.loginfo(lookahead_point)
         x_curr, y_curr, theta_curr = 0.0, 0.0, 0.0
         x_ref, y_ref = lookahead_point
         car_vector = (np.cos(theta_curr), np.sin(theta_curr)) # direction of car
@@ -169,7 +170,7 @@ class PurePursuit(object):
         eta = np.arccos(np.dot(car_vector, reference_vector)/(np.linalg.norm(car_vector)*l_1))
         delta = np.arctan(2 * self.wheelbase_length * np.sin(eta) / l_1) # from lecture notes 5-6
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
-        rospy.loginfo(sign * delta)
+        #rospy.loginfo(sign * delta)
         return sign * delta
 
     def line(self, p1, p2):
