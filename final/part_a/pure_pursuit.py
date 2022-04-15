@@ -22,7 +22,7 @@ class PurePursuit(object):
     def __init__(self):
         # Constants
         # TODO: Tune these parameters for pixel values
-        self.speed = 3.5
+        self.speed = 3.9
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
         self.px_lookahead = 200
@@ -143,14 +143,14 @@ class PurePursuit(object):
             #print("One intersection found")
             #rospy.loginfo("one intersection")
             x = intersections[0][0]
-            if x < self.img_width / 2:
+            if x <= 340:
                 # Left lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x += 4
+                x += 15
             else:
                 # Right lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x -= 4
+                x -= 15
             return (x, self.px_lookahead, 0)
         else:
             #print(str(len(intersections)) + " intersections found")
