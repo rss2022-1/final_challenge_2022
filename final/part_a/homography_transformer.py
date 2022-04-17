@@ -4,13 +4,8 @@ import rospy
 import numpy as np
 
 import cv2
-from cv_bridge import CvBridge, CvBridgeError
-
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
-from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Point32
 
 #The following collection of pixel locations and corresponding relative
 #ground plane locations are used to compute our homography matrix
@@ -43,7 +38,7 @@ METERS_PER_INCH = 0.0254
 class HomographyTransformer:
     def __init__(self):
         self.lookahead_px_sub = rospy.Subscriber("/relative_lookahead_px", Point, self.line_point_cb)
-        self.lookahead_point_pub = rospy.Publisher("/relative_lookahead_point", Point, queue_size=10)
+        self.lookahead_point_pub = rospy.Publisher("/relative_lookahead_point", Point32, queue_size=10)
         self.marker_pub = rospy.Publisher("/lookahead_point_marker", Marker, queue_size=1)
 
         if not len(PTS_GROUND_PLANE) == len(PTS_IMAGE_PLANE):

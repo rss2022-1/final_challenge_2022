@@ -7,10 +7,9 @@ from cv_bridge import CvBridge
 import imutils
 
 from sensor_msgs.msg import Image
-from computer_vision.color_segmentation import cd_color_segmentation
 
 # import your color segmentation algorithm; call this function in ros_image_callback!
-from .color_segmentation import cd_color_segmentation
+from color_segmentation import cd_color_segmentation
 
 
 class LaneSegmenter():

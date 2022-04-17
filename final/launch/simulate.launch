@@ -1,0 +1,29 @@
+<launch>
+  <!-- Listen to messages from joysicks -->
+  <node pkg="joy" name="joy_node" type="joy_node"/>
+
+  <!-- Launch a map from the maps folder -->
+  <arg name="map" default="$(find racecar_simulator)/maps/stata_basement.yaml"/>
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+  <!-- Launch the racecar model -->
+  <include file="$(find racecar_simulator)/launch/racecar_model.launch"/>
+
+  <!-- Begin the simulator with the parameters from params.yaml -->
+  <node pkg="racecar_simulator" name="racecar_simulator" type="simulate" output="screen">
+    <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  </node>
+
+  <!-- Launch homography transformer -->
+  <node pkg="final" type="homography_transformer.py" name="Homography_Transformer" output="screen">
+	</node>
+
+  <!-- Launch Lane Segmenter -->
+  <node pkg="final" type="lane_segmenter.py" name="Lane_Segmenter" output="screen">
+  </node>
+
+  <!-- Launch Pure Pursuit -->
+  <node pkg="final" type="pure_pursuit.py" name="Lane_Follower" output="screen">
+  </node>
+
+</launch>
