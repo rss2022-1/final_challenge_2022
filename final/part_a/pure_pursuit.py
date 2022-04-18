@@ -9,6 +9,7 @@ from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
 
+
 class PurePursuit(object):
     """ Implements Pure Pursuit trajectory tracking with a fixed lookahead and speed.
     """
@@ -18,6 +19,7 @@ class PurePursuit(object):
         self.speed = 2.0
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
+        self.px_lookahead = 150
         self.wrap = 0
         self.wheelbase_length = 0.35
         self.p = .8
@@ -54,7 +56,10 @@ class PurePursuit(object):
         # TODO: use hough transform to detect lanes, then send list of segments to pure pursuit
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
-        raise NotImplementedError
+        segments = []
+        # TODO: GET LIST OF LINE SEGMENTS
+        point_px = self.find_lookahead_point(segments)
+        self.relative_lookahead_px_pub.publish(point_px)
 
     def pursue(self, msg):
         """
@@ -72,6 +77,19 @@ class PurePursuit(object):
         """
         # TODO: find the lookahead point by looping through all line segments and finding the intersections and
         # averaging them.
+        intersections = lane_segments[(((lane_segments[:,1] < self.px_lookahead) & (lane_segments[:,3] > self.px_lookahead)) | ((lane_segments[:,1] > self.px_lookahead) & (lane_segments[:,3] < self.px_lookahead)))]
+        if len(intersections) == 2:
+            print("Two intersections")
+            center_x_0 = (intersections[0,0] + intersections[0,2])/2
+            center_y_0 = (intersections[0,1] + intersections[0,3])/2
+            center_x_1 = (intersections[1,0] + intersections[1,2])/2
+            center_y_1 = (intersections[1,1] + intersections[1,3])/2
+            center_x = (center_x_0 + center_x_1)/2
+            center_y = (center_y_0 + center_y_1)/2
+            return Point(center_x, center_y, 0)
+        else:
+            print(len(intersections) + " Intersections")
+            return Point(0, 0, 0)
         raise NotImplementedError
         # NOTE: Old code for reference
                 # Note: Only look at points further ahead on the trajectory than the
@@ -128,6 +146,12 @@ class PurePursuit(object):
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
         return sign * delta
 
+    def test_lookahead():
+        lane_segments = np.array([[0, 0, 0, 100], [0, 100, 0, 200], [0, 200, 0, 300], [100, 0, 100, 100], [100, 100, 100, 200], [100, 200, 100, 300]])
+        lookahead_point = self.find_lookahead_point(lane_segments)
+        print(lookahead_point)
+        assert lookahead_point == Point(50, 150, 0)
+        print("Test passed")
 
 if __name__=="__main__":
     rospy.init_node("pure_pursuit")
