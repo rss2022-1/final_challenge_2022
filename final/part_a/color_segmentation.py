@@ -65,6 +65,8 @@ def test_segmentation():
 		mask = cd_color_segmentation(img,250)
 		image_print(img)
 		image_print(mask)
+		if i == 0:
+			cv2.imwrite("mask.jpg", mask)
 
 test_segmentation()
 

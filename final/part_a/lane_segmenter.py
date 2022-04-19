@@ -38,7 +38,6 @@ class LaneSegmenter():
         mask = cd_color_segmentation(rot_image, 0)
         self.mask_pub.publish(self.bridge.cv2_to_imgmsg(mask, "mono8"))
 
-
 if __name__ == '__main__':
     try:
         rospy.init_node('LaneSegmenter', anonymous=True)

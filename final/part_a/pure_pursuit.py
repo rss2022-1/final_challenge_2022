@@ -3,6 +3,9 @@
 import rospy
 import numpy as np
 import time
+import os
+import cv2
+import math
 
 from geometry_msgs.msg import Point32, Point
 from sensor_msgs.msg import Image
@@ -25,11 +28,11 @@ class PurePursuit(object):
         self.p = .8
 
         # Subscribers and publishers
-        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
-        self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
-        self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
-        self.lookahead_point_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.pursue)
-        self.error_pub = rospy.Publisher('/error', Float32, queue_size=1)
+        # self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
+        # self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
+        # self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
+        # self.lookahead_point_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.pursue)
+        # self.error_pub = rospy.Publisher('/error', Float32, queue_size=1)
 
         rospy.loginfo("Initialized Pure Pursuit Node")
 
@@ -163,7 +166,54 @@ class PurePursuit(object):
     #     assert lookahead_point == Point(50, 150, 0)
     #     print("Test passed")
 
+def image_print(img):
+	"""
+	Helper function to print out images, for debugging. Pass them in as a list.
+	Press any key to continue.
+	"""
+	winname = "Image"
+	cv2.namedWindow(winname)        # Create a named window
+	cv2.moveWindow(winname, 40,30)  # Move it to (40,30)
+	cv2.imshow(winname, img)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+def test_get_lanes():
+    test_img = os.path.abspath(os.getcwd()) + "/test_imgs/mask.jpg"
+    src = cv2.imread(test_img)
+    dst = cv2.Canny(src, 50, 200, None, 3)
+
+    # Copy edges to the images that will display the results in BGR
+    cdst = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+    cdstP = np.copy(cdst)
+
+    lines = cv2.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
+
+    if lines is not None:
+        for i in range(0, len(lines)):
+            rho = lines[i][0][0]
+            theta = lines[i][0][1]
+            a = math.cos(theta)
+            b = math.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
+            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
+            cv2.line(cdst, pt1, pt2, (0,0,255), 3, cv2.LINE_AA)
+
+
+    linesP = cv2.HoughLinesP(dst, 1, np.pi / 180, 50, None, 50, 10)
+
+    if linesP is not None:
+        for i in range(0, len(linesP)):
+            l = linesP[i][0]
+            cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+    image_print(cdstP)
+
+
+
 if __name__=="__main__":
-    rospy.init_node("pure_pursuit")
-    pf = PurePursuit()
-    rospy.spin()
+    # rospy.init_node("pure_pursuit")
+    # pf = PurePursuit()
+    # rospy.spin()
+    test_get_lanes()
