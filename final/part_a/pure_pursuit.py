@@ -53,6 +53,16 @@ class PurePursuit(object):
         Takes in an image mask and performs Hough transform to detect lanes than calls
         find_lookahead_point with the detected lane segments.
         """
+        '''
+        FOR COLOR SEGMENTATION:
+        Options:
+        - Just look out for the white lines, problem is that there is white everywhere on the track - could be mitigated by erosion/dilation and cropping
+        - First segment for the track (whatever color it is) and then segment for the lanes
+
+        FOR LINES:
+        Isolate center of image to get the two lines in the center. Once we get the starting point of the lines,
+        we follow the lines starting at the bottom of the image to keep track of which of the segments belong to which lane
+        '''
         # TODO: use hough transform to detect lanes, then send list of segments to pure pursuit
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
@@ -146,12 +156,12 @@ class PurePursuit(object):
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
         return sign * delta
 
-    def test_lookahead():
-        lane_segments = np.array([[0, 0, 0, 100], [0, 100, 0, 200], [0, 200, 0, 300], [100, 0, 100, 100], [100, 100, 100, 200], [100, 200, 100, 300]])
-        lookahead_point = self.find_lookahead_point(lane_segments)
-        print(lookahead_point)
-        assert lookahead_point == Point(50, 150, 0)
-        print("Test passed")
+    # def test_lookahead():
+    #     lane_segments = np.array([[0, 0, 0, 100], [0, 100, 0, 200], [0, 200, 0, 300], [100, 0, 100, 100], [100, 100, 100, 200], [100, 200, 100, 300]])
+    #     lookahead_point = find_lookahead_point(lane_segments)
+    #     print(lookahead_point)
+    #     assert lookahead_point == Point(50, 150, 0)
+    #     print("Test passed")
 
 if __name__=="__main__":
     rospy.init_node("pure_pursuit")

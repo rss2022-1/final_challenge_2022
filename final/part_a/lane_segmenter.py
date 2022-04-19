@@ -26,7 +26,7 @@ class LaneSegmenter():
 
     def image_callback(self, image_msg):
         """
-        Applies our color segmentation algorithm to the image msg and publishes 
+        Applies our color segmentation algorithm to the image msg and publishes
         the resulting mask.
         """
 
@@ -35,7 +35,7 @@ class LaneSegmenter():
         # TODO: Crop the image to only look at a certain part of the frame where the lines will be
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # See ^ for examples of cropping and doing cv2 stuff
-        bb, mask = cd_color_segmentation(rot_image, None)
+        mask = cd_color_segmentation(rot_image, 0)
         self.mask_pub.publish(self.bridge.cv2_to_imgmsg(mask, "mono8"))
 
 

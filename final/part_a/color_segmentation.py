@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pdb
+import os
 
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
@@ -25,7 +26,7 @@ def image_print(img):
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
 
-def cd_color_segmentation(img, template):
+def cd_color_segmentation(img, y_cutoff=0):
 	"""
 	Implement the cone detection using color segmentation algorithm
 	Input:
@@ -36,38 +37,35 @@ def cd_color_segmentation(img, template):
 				(x1, y1) is the top left of the bbox and (x2, y2) is the bottom right of the bbox
 	"""
 	########## YOUR CODE STARTS HERE ##########
-	bounding_box = ((0,0),(0,0))
+	w = img.shape[1]
+	cropped_im = img
+	cv2.rectangle(cropped_im, (0,0), (w, y_cutoff), (0, 0, 0), -1)
 
 	# Change color space to HSV
 	hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 	# Erode TODO: RE-TUNE THESE VALUES
-	kernel = np.ones((4, 4), 'uint8')
-	img = cv2.erode(img, kernel, iterations=1)
-	img = cv2.dilate(img, np.ones((8,8), 'uint8'), iterations=1)
+	img = cv2.erode(img, np.ones((8, 8), 'uint8'), iterations=1)
+	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	ORANGE_MIN = np.array([5, 170, 170],np.uint8) # [Hue, Saturation, Value] #5/17 # 5
-	ORANGE_MAX = np.array([100, 255, 255],np.uint8) # 17
-	mask = cv2.inRange(hsv_img, ORANGE_MIN, ORANGE_MAX)
-	# image_print(mask)
-
-	# Put mask through
-	contours, hierarchy = cv2.findContours(mask,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[-2:]
-	max_h, max_w, best_x, best_y = 0, 0, 0, 0
-	for c in contours:
-		x,y,w,h = cv2.boundingRect(c)
-		if w * h > max_w * max_h:
-			max_h = h
-			max_w = w
-			best_x = x
-			best_y = y
-
-	cv2.rectangle(mask,(best_x,best_y),(best_x+max_w,best_y+max_h),(255,0,0),1)
-
-	bounding_box = ((best_x,best_y),(best_x+max_w,best_y+max_h))
-
+	sensitivity = 25
+	lower_white = np.array([0,0,255-sensitivity])
+	upper_white = np.array([255,sensitivity,255])
+	mask = cv2.inRange(hsv_img, lower_white, upper_white)
 	########### YOUR CODE ENDS HERE ###########
 
 	# Return bounding box
-	return bounding_box, mask
+	return mask
+
+def test_segmentation():
+	base_path = os.path.abspath(os.getcwd()) + "/test_imgs/img_"
+	for i in range(4):
+		img = cv2.imread(base_path + str(i) + ".jpg")
+		mask = cd_color_segmentation(img,250)
+		image_print(img)
+		image_print(mask)
+
+test_segmentation()
+
+
