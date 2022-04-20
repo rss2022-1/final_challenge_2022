@@ -185,7 +185,7 @@ def get_contours(src):
     # Copy edges to the images that will display the results in BGR
     cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
 
-    linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 50, None, 20, 500)
+    linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 1, 500)
 
     prev_lines = [] # (theta, x1, y1, x2, y2, v)
 
@@ -194,16 +194,17 @@ def get_contours(src):
             x1, y1, x2, y2 = linesP[i][0]
             v = np.array([x2-x1, y2-y1])
             th = np.arctan2(v[1], v[0])
-
             pixel_epsilon = 80
             scaled_v = 200 * (v / np.linalg.norm(v))
+            # Delete lines that are too horizontal
             if np.abs(th) < .15:
                 continue
+            # Delete lines that are similar to previous lines
             if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
                 continue
             prev_lines.append([th, x1, y1, x2, y2, scaled_v])
             cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
-    return cdstP
+    return cdstP, prev_lines
 
 
 def test_get_lanes():
@@ -211,7 +212,7 @@ def test_get_lanes():
     for i in range(1, 24):
         src = cv2.imread(masks_path + "mask" + str(i) + ".jpg")
         image_print(src)
-        cdstP = get_contours(src)
+        cdstP, lines = get_contours(src)
         image_print(cdstP)
         # cdstP = contours_2(src)
 
