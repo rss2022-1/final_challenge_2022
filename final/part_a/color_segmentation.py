@@ -1,3 +1,4 @@
+from turtle import down
 import cv2
 import numpy as np
 import pdb
@@ -40,6 +41,18 @@ def cd_color_segmentation(img, y_cutoff=0):
 	w = img.shape[1]
 	cropped_im = img
 	cv2.rectangle(cropped_im, (0,0), (w, y_cutoff), (0, 0, 0), -1)
+	w_offset = 200
+	h_offset = 40 + y_cutoff
+	r_corner = (0, y_cutoff)
+	r_down_corner = (0, h_offset)
+	r_w_corner = (w_offset, y_cutoff)
+	r_triangle_cnt = np.array([r_corner, r_down_corner, r_w_corner])
+	cv2.drawContours(cropped_im, [r_triangle_cnt], 0, (0,0,0), -1)
+	l_corner = (w, y_cutoff)
+	l_down_corner = (w, h_offset)
+	l_w_corner = (w - w_offset, y_cutoff)
+	l_triangle_cnt = np.array([l_corner, l_down_corner, l_w_corner])
+	cv2.drawContours(cropped_im, [l_triangle_cnt], 0, (0,0,0), -1)
 
 	# Change color space to HSV
 	hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -49,7 +62,7 @@ def cd_color_segmentation(img, y_cutoff=0):
 	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	sensitivity = 25
+	sensitivity = 60
 	lower_white = np.array([0,0,255-sensitivity])
 	upper_white = np.array([255,sensitivity,255])
 	mask = cv2.inRange(hsv_img, lower_white, upper_white)
@@ -59,10 +72,16 @@ def cd_color_segmentation(img, y_cutoff=0):
 	return mask
 
 def test_segmentation():
-	base_path = os.path.abspath(os.getcwd()) + "/test_imgs/img_"
-	for i in range(4):
-		img = cv2.imread(base_path + str(i) + ".jpg")
-		mask = cd_color_segmentation(img,250)
+	# base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
+	# end = 17
+	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
+	# end = 10
+	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
+	end = 24
+
+	for i in range(1, end):
+		img = cv2.imread(base_path + str(i) + ".png")
+		mask = cd_color_segmentation(img,195)
 		image_print(img)
 		image_print(mask)
 		if i == 0:

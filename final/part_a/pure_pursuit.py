@@ -207,7 +207,11 @@ def test_get_lanes():
     if linesP is not None:
         for i in range(0, len(linesP)):
             l = linesP[i][0]
-            cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+            v = np.array([l[2], l[3]]) - np.array([l[0], l[1]])
+            th = np.arctan2(v[1], v[0])
+            print(np.abs(th))
+            if np.abs(th) > np.pi / 2:
+                cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
     image_print(cdstP)
 
 
