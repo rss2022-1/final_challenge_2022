@@ -6,6 +6,8 @@ import time
 import os
 import cv2
 import math
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 from geometry_msgs.msg import Point32, Point
 from sensor_msgs.msg import Image
@@ -178,29 +180,10 @@ def image_print(img):
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
 
-def test_get_lanes():
-    test_img = os.path.abspath(os.getcwd()) + "/test_imgs/mask.jpg"
-    src = cv2.imread(test_img)
+def get_contours(src):
     dst = cv2.Canny(src, 50, 200, None, 3)
-
     # Copy edges to the images that will display the results in BGR
-    cdst = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
-    cdstP = np.copy(cdst)
-
-    lines = cv2.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
-
-    if lines is not None:
-        for i in range(0, len(lines)):
-            rho = lines[i][0][0]
-            theta = lines[i][0][1]
-            a = math.cos(theta)
-            b = math.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            cv2.line(cdst, pt1, pt2, (0,0,255), 3, cv2.LINE_AA)
-
+    cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
 
     linesP = cv2.HoughLinesP(dst, 1, np.pi / 180, 50, None, 50, 10)
 
@@ -210,9 +193,21 @@ def test_get_lanes():
             v = np.array([l[2], l[3]]) - np.array([l[0], l[1]])
             th = np.arctan2(v[1], v[0])
             print(np.abs(th))
-            if np.abs(th) > np.pi / 2:
-                cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
-    image_print(cdstP)
+            # if np.abs(th) > np.pi / 8:
+            cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+    return cdstP
+
+
+def test_get_lanes():
+    masks_path = os.path.abspath(os.getcwd()) + "/masks/"
+    for i in range(1, 10):
+        src = cv2.imread(masks_path + "mask" + str(i) + ".jpg")
+        image_print(src)
+        cdstP = get_contours(src)
+        image_print(cdstP)
+        # cdstP = contours_2(src)
+
+
 
 
 

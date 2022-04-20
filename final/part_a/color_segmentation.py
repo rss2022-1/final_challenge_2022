@@ -74,18 +74,17 @@ def cd_color_segmentation(img, y_cutoff=0):
 def test_segmentation():
 	# base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
 	# end = 17
-	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
-	# end = 10
-	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
-	end = 24
+	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
+	end = 10
+	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
+	# end = 24
 
 	for i in range(1, end):
 		img = cv2.imread(base_path + str(i) + ".png")
 		mask = cd_color_segmentation(img,195)
 		image_print(img)
 		image_print(mask)
-		if i == 0:
-			cv2.imwrite("mask.jpg", mask)
+		cv2.imwrite("masks/mask" + str(i) + ".jpg", mask)
 
 test_segmentation()
 
