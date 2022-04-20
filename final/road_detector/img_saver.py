@@ -4,6 +4,7 @@ from sensor_msgs.msg import Image
 import numpy as np
 import PIL.Image as pimage
 import cv2
+import os
 
 image_list = []
 
@@ -11,22 +12,22 @@ if __name__ == "__main__":
     rospy.init_node("img_saver")
 
     def process_imgs():
-        saved_imgs = image_list[::10]
+        saved_imgs = image_list[::3]
         for i, img in enumerate(saved_imgs):
             im = pimage.fromarray(img)
             # TODO: Change below path
             im.save(
-                "/path/to/ml-final-challenge/saved_images/"
+                os.path.abspath(os.getcwd()) + "/test_images/"
                 + str(i) + ".png")
         print("finished saving!")
         return
 
     def cb(msg):
         # TODO: If camera is upside-down, set flip = True, else leave as False
-        flip = False
+        flip = True
         # TODO: Set total_images = #images in the rosbag you recorded. Get this info
         # with rosbag info [rosbag name]
-        total_images = None
+        total_images = 71
 
         np_img = np.frombuffer(msg.data,
                                dtype=np.uint8).reshape(msg.height, msg.width,
