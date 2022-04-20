@@ -185,7 +185,7 @@ def get_contours(src):
     # Copy edges to the images that will display the results in BGR
     cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
 
-    linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 50, None, 20, 500)
+    linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 1, 500)
 
     prev_lines = [] # (theta, x1, y1, x2, y2, v)
 
