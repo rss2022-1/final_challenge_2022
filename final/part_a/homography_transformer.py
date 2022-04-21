@@ -55,6 +55,7 @@ class HomographyTransformer:
         np_pts_image = np.float32(np_pts_image[:, np.newaxis, :])
 
         self.h, err = cv2.findHomography(np_pts_image, np_pts_ground)
+        rospy.loginfo("Homography Node Initialized")
 
     def test_callback(self, msg):
         u = msg.x
@@ -77,7 +78,7 @@ class HomographyTransformer:
         x, y = self.transformUvToXy(u, v)
 
         #Publish relative xy position of object in real world
-        relative_xy_msg = Point()
+        relative_xy_msg = Point32()
         relative_xy_msg.x = x
         relative_xy_msg.y = y
         relative_xy_msg.z = 0.0
