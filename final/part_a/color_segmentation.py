@@ -62,7 +62,7 @@ def cd_color_segmentation(img, y_cutoff=0):
 	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	sensitivity = 60
+	sensitivity = 80
 	lower_white = np.array([0,0,255-sensitivity])
 	upper_white = np.array([255,sensitivity,255])
 	mask = cv2.inRange(hsv_img, lower_white, upper_white)
@@ -74,10 +74,10 @@ def cd_color_segmentation(img, y_cutoff=0):
 def test_segmentation():
 	# base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
 	# end = 17
-	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
-	end = 10
-	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
-	# end = 24
+	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
+	# end = 10
+	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
+	end = 24
 
 	for i in range(1, end):
 		img = cv2.imread(base_path + str(i) + ".png")
