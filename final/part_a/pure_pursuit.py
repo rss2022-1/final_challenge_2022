@@ -146,12 +146,9 @@ class PurePursuit(object):
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
                 x -= 0
             return (x, self.px_lookahead, 0)
-        elif len(intersections) == 2:
-            print("two intersections found")
-            return (int((intersections[0][0] + intersections[1][0])/2.), self.px_lookahead, 0)
         else:
             print(str(len(intersections)) + " intersections found")
-            return (0, 0, 0)
+            return (int((intersections[0][0] + intersections[1][0])/2.), self.px_lookahead, 0)
 
     def compute_steering_angle(self, lookahead_point):
         ''' Computes the steering angle for the robot to follow the given trajectory.
@@ -293,13 +290,9 @@ def find_lookahead_point(lane_segments):
     if len(intersections) == 1:
         print("One intersection found")
         return (intersections[0][0], px_lookahead, 0)
-    elif len(intersections) == 2:
-        print("two intersections found")
-        return (int((intersections[0][0] + intersections[1][0])/2.), px_lookahead, 0)
     else:
         print(str(len(intersections)) + " intersections found")
-        return (0, 0, 0)
-
+        return (int((intersections[0][0] + intersections[1][0])/2.), px_lookahead, 0)
 
 
 def test_get_lanes():
@@ -312,7 +305,7 @@ def test_get_lanes():
 
 def test_get_intersection():
     masks_path = os.path.abspath(os.getcwd()) + "/masks/"
-    for i in range(1, 24):
+    for i in range(1, 17):
         src = cv2.imread(masks_path + "mask" + str(i) + ".jpg")
         cdstP, lines = get_contours(src)
         image_print(cdstP)
@@ -320,10 +313,6 @@ def test_get_intersection():
         image = cv2.circle(cdstP, (lookahead_point[0], lookahead_point[1]), radius=4, color=(255, 0, 0), thickness=-1)
         print(i)
         image_print(image)
-
-
-
-
 
 
 
