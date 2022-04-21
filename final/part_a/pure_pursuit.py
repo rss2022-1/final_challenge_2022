@@ -24,17 +24,19 @@ class PurePursuit(object):
         self.speed = 2.0
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
-        self.px_lookahead = 150
+        self.px_lookahead = 230
         self.wrap = 0
         self.wheelbase_length = 0.35
         self.p = .8
+        self.img_width = 640
+        self.img_height = 480
 
         # Subscribers and publishers
-        # self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
-        # self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
-        # self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
-        # self.lookahead_point_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.pursue)
-        # self.error_pub = rospy.Publisher('/error', Float32, queue_size=1)
+        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
+        self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
+        self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
+        self.lookahead_point_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.pursue)
+        self.error_pub = rospy.Publisher('/error', Float32, queue_size=1)
 
         rospy.loginfo("Initialized Pure Pursuit Node")
 
@@ -71,10 +73,14 @@ class PurePursuit(object):
         # TODO: use hough transform to detect lanes, then send list of segments to pure pursuit
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
-        segments = []
-        # TODO: GET LIST OF LINE SEGMENTS
+        mask_image = self.bridge.imgmsg_to_cv2(img_msg, "bgr8")
+        segments = self.get_contours(mask_image)
         point_px = self.find_lookahead_point(segments)
-        self.relative_lookahead_px_pub.publish(point_px)
+        pt = Point()
+        pt.x = point_px[0]
+        pt.y = point_px[1]
+        pt.z = 0
+        self.relative_lookahead_px_pub.publish(pt)
 
     def pursue(self, msg):
         """
@@ -85,6 +91,33 @@ class PurePursuit(object):
         msg = self.create_ackermann_msg(steering_angle)
         self.drive_pub.publish(msg)
 
+    def get_contours(self, src):
+        dst = cv2.Canny(src, 50, 200, None, 3)
+        # Copy edges to the images that will display the results in BGR
+        cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+
+        linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 1, 500)
+
+        prev_lines = [] # (theta, x1, y1, x2, y2, v)
+
+        if linesP is not None:
+            for i in range(0, len(linesP)):
+                x1, y1, x2, y2 = linesP[i][0]
+                v = np.array([x2-x1, y2-y1])
+                th = np.arctan2(v[1], v[0])
+                pixel_epsilon = 80
+                scaled_v = 200 * (v / np.linalg.norm(v))
+                # Delete lines that are too horizontal
+                if np.abs(th) < .15:
+                    continue
+                # Delete lines that are similar to previous lines
+                if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
+                    continue
+                # new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
+                prev_lines.append([th, x1, y1, x2, y2, scaled_v])
+                cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
+        return cdstP, np.array(prev_lines)
+
     def find_lookahead_point(self, lane_segments):
         """
         Finds the lookahead point based off the list of segments, by finding where the circle
@@ -92,59 +125,33 @@ class PurePursuit(object):
         """
         # TODO: find the lookahead point by looping through all line segments and finding the intersections and
         # averaging them.
-        intersections = lane_segments[(((lane_segments[:,1] < self.px_lookahead) & (lane_segments[:,3] > self.px_lookahead)) | ((lane_segments[:,1] > self.px_lookahead) & (lane_segments[:,3] < self.px_lookahead)))]
-        if len(intersections) == 2:
-            print("Two intersections")
-            center_x_0 = (intersections[0,0] + intersections[0,2])/2
-            center_y_0 = (intersections[0,1] + intersections[0,3])/2
-            center_x_1 = (intersections[1,0] + intersections[1,2])/2
-            center_y_1 = (intersections[1,1] + intersections[1,3])/2
-            center_x = (center_x_0 + center_x_1)/2
-            center_y = (center_y_0 + center_y_1)/2
-            return Point(center_x, center_y, 0)
-        else:
-            print(len(intersections) + " Intersections")
-            return Point(0, 0, 0)
-        raise NotImplementedError
-        # NOTE: Old code for reference
-                # Note: Only look at points further ahead on the trajectory than the
-        # point returned by find_closest_point_on_trajectory
-        points = np.array(self.trajectory.points[start_point_idx:])
-        center = np.array(current_pose[:-1])
-
-        # Compute the lookahead point
+        if len(lane_segments) == 0:
+            print("No lane segments found")
+            return (0,0,0)
+        lookahead_line = self.line((0, self.px_lookahead), (1000, self.px_lookahead))
         intersections = []
-        for i in range(min(len(points)-1, 6)):
-            p1 = points[i]
-            p2 = points[i+1]
-            V = p2 - p1
-            a = V.dot(V)
-            b = 2 * V.dot(p1-center)
-            c = p1.dot(p1) + center.dot(center) - 2 * p1.dot(center) - self.lookahead**2
-            disc = b**2 - 4 * a * c
-            if disc < 0:
-                continue
+        for i in range(len(lane_segments)):
+            l = self.line(lane_segments[i][1:3], lane_segments[i][3:5])
+            x, y = self.intersection(lookahead_line, l)
+            intersections.append((x, y))
+        if len(intersections) == 1:
+            print("One intersection found")
+            x = intersections[0][0]
+            if x < self.img_width / 2:
+                # Left lane
+                # TODO: Use homography to see how many pixels to the right we need to shift our "center"
+                x += 0
             else:
-                sqrt_disc = np.sqrt(disc)
-                t1 = (-b + sqrt_disc) / (2 * a)
-                t2 = (-b - sqrt_disc) / (2 * a)
-                if 0 <= t1 <= 1 and 0 <= t2 <= 1:
-                    # choose which one
-                    t = max(t1, t2)
-                elif 0 <= t1 <= 1:
-                    t = t1
-                elif 0 <= t2 <= 1:
-                    t = t2
-                else:
-                    continue
-                intersections.append(p1 + t * V)
-        if len(intersections) == 0:
-            # Intersection not found, how to find point to go to?
-            rospy.loginfo("COULD NOT FIND INTERSECTION DO SOMETHING")
-            return None
-        res = intersections[-1]
-        self.publish_point(res)
-        return res
+                # Right lane
+                # TODO: Use homography to see how many pixels to the right we need to shift our "center"
+                x -= 0
+            return (x, self.px_lookahead, 0)
+        elif len(intersections) == 2:
+            print("two intersections found")
+            return (int((intersections[0][0] + intersections[1][0])/2.), self.px_lookahead, 0)
+        else:
+            print(str(len(intersections)) + " intersections found")
+            return (0, 0, 0)
 
     def compute_steering_angle(self, lookahead_point):
         ''' Computes the steering angle for the robot to follow the given trajectory.
@@ -161,12 +168,23 @@ class PurePursuit(object):
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
         return sign * delta
 
-    # def test_lookahead():
-    #     lane_segments = np.array([[0, 0, 0, 100], [0, 100, 0, 200], [0, 200, 0, 300], [100, 0, 100, 100], [100, 100, 100, 200], [100, 200, 100, 300]])
-    #     lookahead_point = find_lookahead_point(lane_segments)
-    #     print(lookahead_point)
-    #     assert lookahead_point == Point(50, 150, 0)
-    #     print("Test passed")
+    def line(self, p1, p2):
+        A = (p1[1] - p2[1])
+        B = (p2[0] - p1[0])
+        C = (p1[0]*p2[1] - p2[0]*p1[1])
+        return A, B, -C
+
+    def intersection(self, L1, L2):
+        D  = L1[0] * L2[1] - L1[1] * L2[0]
+        Dx = L1[2] * L2[1] - L1[1] * L2[2]
+        Dy = L1[0] * L2[2] - L1[2] * L2[0]
+        if D != 0:
+            x = Dx / D
+            y = Dy / D
+            return x, y
+        else:
+            return 0, 0
+
 
 def image_print(img):
 	"""
@@ -203,19 +221,10 @@ def get_contours(src):
             # Delete lines that are similar to previous lines
             if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
                 continue
-            # new_x1, new_y1 = get_intersection(x2, y2, x1, y1, w, h)
-            print("X1: " + str(x1) + " Y1: " + str(y1))
-            print("X2: " + str(x2) + " Y2: " + str(y2))
-            # new_x1, new_y1 = get_intersection(x1, y1, x2, y2, w, h)
-            new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
-            # print("New X1: " + str(new_x1) + " New Y1: " + str(new_y1))
-            print("New X2: " + str(new_x2) + " New Y2: " + str(new_y2))
-            # cv2.line(cdstP, (new_x1, new_y1), (x1, y1), (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.line(cdstP, (x2, y2), (new_x2, new_y2), (0, 255, 0), 2, cv2.LINE_AA)
-            # cv2.line(cdstP, (x1, y1), (0, 0), (0, 255, 255), 2, cv2.LINE_AA)
+            # new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
             prev_lines.append([th, x1, y1, x2, y2, scaled_v])
             cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
-    return cdstP, prev_lines
+    return cdstP, np.array(prev_lines)
 
 
 def get_intersection(x1, y1, x2, y2, w, h):
@@ -224,34 +233,73 @@ def get_intersection(x1, y1, x2, y2, w, h):
     when you extend the line in the direction 1 to 2
     """
     slope = float(y2 - y1) / float(x2 - x1)
-    print(slope)
+    # print(slope)
     y_intercept = y1 - slope * x1
     x_intercept = -y_intercept / slope
     if x_intercept < 0: # left edge intersection
-        print("Left edge intersection")
+        # print("Left edge intersection")
         new_x = 0
         new_y = y_intercept
     elif x_intercept > w: # Right edge intersection
-        print("right edge intersection")
+        # print("right edge intersection")
         new_x = w
         new_y = slope * w + y_intercept
     elif x_intercept > 0 and x_intercept < w: # Middle intersection
-        print("middle intersection x")
+        # print("middle intersection x")
         new_x = x_intercept
         new_y = slope * x_intercept + y_intercept
     elif y_intercept < 0: # Top edge intersection
-        print("top edge intersection")
+        # print("top edge intersection")
         new_x = (0 - y_intercept) / slope
         new_y = 0
     elif y_intercept > h: # Bottom edge intersection
-        print("bottom edge intersection")
+        # print("bottom edge intersection")
         new_x = (h - y_intercept) / slope
         new_y = h
     else:
-        print("Middle intersection")
+        # print("Middle intersection")
         new_x = x_intercept
         new_y = y_intercept
     return int(new_x), int(new_y)
+
+def line(p1, p2):
+    A = (p1[1] - p2[1])
+    B = (p2[0] - p1[0])
+    C = (p1[0]*p2[1] - p2[0]*p1[1])
+    return A, B, -C
+
+def intersection(L1, L2):
+    D  = L1[0] * L2[1] - L1[1] * L2[0]
+    Dx = L1[2] * L2[1] - L1[1] * L2[2]
+    Dy = L1[0] * L2[2] - L1[2] * L2[0]
+    if D != 0:
+        x = Dx / D
+        y = Dy / D
+        return x, y
+    else:
+        return 0, 0
+
+def find_lookahead_point(lane_segments):
+    if len(lane_segments) == 0:
+        print("No lane segments found")
+        return (0,0,0)
+    px_lookahead = 230
+    lookahead_line = line((0, px_lookahead), (1000, px_lookahead))
+    intersections = []
+    for i in range(len(lane_segments)):
+        l = line(lane_segments[i][1:3], lane_segments[i][3:5])
+        x, y = intersection(lookahead_line, l)
+        intersections.append((x, y))
+    if len(intersections) == 1:
+        print("One intersection found")
+        return (intersections[0][0], px_lookahead, 0)
+    elif len(intersections) == 2:
+        print("two intersections found")
+        return (int((intersections[0][0] + intersections[1][0])/2.), px_lookahead, 0)
+    else:
+        print(str(len(intersections)) + " intersections found")
+        return (0, 0, 0)
+
 
 
 def test_get_lanes():
@@ -261,7 +309,19 @@ def test_get_lanes():
         image_print(src)
         cdstP, lines = get_contours(src)
         image_print(cdstP)
-        # cdstP = contours_2(src)
+
+def test_get_intersection():
+    masks_path = os.path.abspath(os.getcwd()) + "/masks/"
+    for i in range(1, 24):
+        src = cv2.imread(masks_path + "mask" + str(i) + ".jpg")
+        cdstP, lines = get_contours(src)
+        image_print(cdstP)
+        lookahead_point = find_lookahead_point(lines)
+        image = cv2.circle(cdstP, (lookahead_point[0], lookahead_point[1]), radius=4, color=(255, 0, 0), thickness=-1)
+        print(i)
+        image_print(image)
+
+
 
 
 
@@ -271,4 +331,5 @@ if __name__=="__main__":
     # rospy.init_node("pure_pursuit")
     # pf = PurePursuit()
     # rospy.spin()
-    test_get_lanes()
+    # test_get_lanes()
+    test_get_intersection()
