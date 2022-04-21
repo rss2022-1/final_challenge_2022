@@ -8,6 +8,7 @@ import cv2
 import math
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+from cv_bridge import CvBridge
 
 from geometry_msgs.msg import Point32, Point
 from sensor_msgs.msg import Image
@@ -30,10 +31,12 @@ class PurePursuit(object):
         self.p = .8
         self.img_width = 640
         self.img_height = 480
+        self.bridge = CvBridge()
 
         # Subscribers and publishers
         self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
         self.mask_sub = rospy.Subscriber("/lane_segmenter/lane_mask", Image, self.mask_cb)
+        self.debug_pub = rospy.Publisher("/lane_debug_img", Image, queue_size=10)
         self.relative_lookahead_px_pub = rospy.Publisher("/relative_lookahead_px", Point, queue_size=1)
         self.lookahead_point_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.pursue)
         self.error_pub = rospy.Publisher('/error', Float32, queue_size=1)
@@ -74,8 +77,10 @@ class PurePursuit(object):
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # https://docs.opencv.org/3.4/d9/db0/tutorial_hough_lines.html
         mask_image = self.bridge.imgmsg_to_cv2(img_msg, "bgr8")
-        segments = self.get_contours(mask_image)
+        img, segments = self.get_contours(mask_image)
         point_px = self.find_lookahead_point(segments)
+        image = cv2.circle(img, (point_px[0], point_px[1]), radius=4, color=(255, 0, 0), thickness=-1)
+        self.debug_pub.publish(self.bridge.cv2_to_imgmsg(image, "passthrough"))
         pt = Point()
         pt.x = point_px[0]
         pt.y = point_px[1]
@@ -155,6 +160,7 @@ class PurePursuit(object):
         '''
         # Compute eta - use a dot b = |a|*|b|*cos(eta) where a is our forward velocity and
         # b is the vector from the robot to the lookahead point
+        rospy.loginfo(lookahead_point)
         x_curr, y_curr, theta_curr = 0.0, 0.0, 0.0
         x_ref, y_ref = lookahead_point
         car_vector = (np.cos(theta_curr), np.sin(theta_curr)) # direction of car
@@ -163,6 +169,7 @@ class PurePursuit(object):
         eta = np.arccos(np.dot(car_vector, reference_vector)/(np.linalg.norm(car_vector)*l_1))
         delta = np.arctan(2 * self.wheelbase_length * np.sin(eta) / l_1) # from lecture notes 5-6
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
+        rospy.loginfo(sign * delta)
         return sign * delta
 
     def line(self, p1, p2):
@@ -317,8 +324,8 @@ def test_get_intersection():
 
 
 if __name__=="__main__":
-    # rospy.init_node("pure_pursuit")
-    # pf = PurePursuit()
-    # rospy.spin()
+    rospy.init_node("pure_pursuit")
+    pf = PurePursuit()
+    rospy.spin()
     # test_get_lanes()
-    test_get_intersection()
+    # test_get_intersection()
