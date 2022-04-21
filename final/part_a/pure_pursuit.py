@@ -181,6 +181,7 @@ def image_print(img):
 	cv2.destroyAllWindows()
 
 def get_contours(src):
+    w, h = src.shape[1], src.shape[0]
     dst = cv2.Canny(src, 50, 200, None, 3)
     # Copy edges to the images that will display the results in BGR
     cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
@@ -202,9 +203,55 @@ def get_contours(src):
             # Delete lines that are similar to previous lines
             if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
                 continue
+            # new_x1, new_y1 = get_intersection(x2, y2, x1, y1, w, h)
+            print("X1: " + str(x1) + " Y1: " + str(y1))
+            print("X2: " + str(x2) + " Y2: " + str(y2))
+            # new_x1, new_y1 = get_intersection(x1, y1, x2, y2, w, h)
+            new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
+            # print("New X1: " + str(new_x1) + " New Y1: " + str(new_y1))
+            print("New X2: " + str(new_x2) + " New Y2: " + str(new_y2))
+            # cv2.line(cdstP, (new_x1, new_y1), (x1, y1), (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.line(cdstP, (x2, y2), (new_x2, new_y2), (0, 255, 0), 2, cv2.LINE_AA)
+            # cv2.line(cdstP, (x1, y1), (0, 0), (0, 255, 255), 2, cv2.LINE_AA)
             prev_lines.append([th, x1, y1, x2, y2, scaled_v])
             cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
     return cdstP, prev_lines
+
+
+def get_intersection(x1, y1, x2, y2, w, h):
+    """
+    Given a line segment returns the intersection point of the line with the rectangle with width w and height h
+    when you extend the line in the direction 1 to 2
+    """
+    slope = float(y2 - y1) / float(x2 - x1)
+    print(slope)
+    y_intercept = y1 - slope * x1
+    x_intercept = -y_intercept / slope
+    if x_intercept < 0: # left edge intersection
+        print("Left edge intersection")
+        new_x = 0
+        new_y = y_intercept
+    elif x_intercept > w: # Right edge intersection
+        print("right edge intersection")
+        new_x = w
+        new_y = slope * w + y_intercept
+    elif x_intercept > 0 and x_intercept < w: # Middle intersection
+        print("middle intersection x")
+        new_x = x_intercept
+        new_y = slope * x_intercept + y_intercept
+    elif y_intercept < 0: # Top edge intersection
+        print("top edge intersection")
+        new_x = (0 - y_intercept) / slope
+        new_y = 0
+    elif y_intercept > h: # Bottom edge intersection
+        print("bottom edge intersection")
+        new_x = (h - y_intercept) / slope
+        new_y = h
+    else:
+        print("Middle intersection")
+        new_x = x_intercept
+        new_y = y_intercept
+    return int(new_x), int(new_y)
 
 
 def test_get_lanes():
