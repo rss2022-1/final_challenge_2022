@@ -10,10 +10,12 @@ class SignDetector:
     
     def __init__(self):
         self.detector = StopSignDetector(threshold=0)
-        self.publisher = rospy.Publisher("/stop_sign_distance", Float32, queue_size=10) # distance to stop sign
-        self.subscriber = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.callback)
-    
-    def callback(self, img_msg):
+        self.publisher = rospy.Publisher("/stop_sign_distance", Float32, queue_size=10) # distance to stop sign in meters
+        self.img_subscriber = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.img_callback)
+        self.depth_subscriber = rospy.Subscriber("/zed/zed_node/depth/depth_registered", Image, self.depth_callback)
+        self.sign_bounding_box = [0, 0, 0, 0]
+
+    def img_callback(self, img_msg):
         # Process image without CV Bridge
         np_img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
         bgr_img = np_img[:,:,:-1]
@@ -23,24 +25,21 @@ class SignDetector:
         stop_sign_present, bounding_box = self.detector.predict(rgb_img)
 
         if not stop_sign_present:
+            self.sign_bounding_box = [0, 0, 0, 0]
             self.publisher.publish(1000) # no stop sign found, so say it's 1000 meters away
         else:
-            x_min = bounding_box[0]
-            y_min = bounding_box[1]
-            x_max = bounding_box[2]
-            y_max = bounding_box[3]
-            sign_width = x_max - x_min
-            sign_height = y_max - y_min
-            sign_area = sign_width * sign_height
-            if sign_area < 1: # probably not detecting right if this small
-                self.publisher.publish(1000)
-            else:
-                dist_to_sign = self.get_distance_to_stop_sign(sign_area)
-                self.publisher.publish(dist_to_sign)
+            self.sign_bounding_box = bounding_box
         
-    def get_distance_to_stop_sign(self, sign_area):
-        # TODO: convert area of stop sign in pixels to distance away in meters
-        return 1000
+    def depth_callback(self, img_msg):
+        depth_img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
+        if self.sign_bounding_box != [0, 0, 0, 0]: # stop sign has been detected
+            x_min = self.sign_bounding_box[0]
+            y_min = self.sign_bounding_box[1]
+            x_max = self.sign_bounding_box[2]
+            y_max = self.sign_bounding_box[3]
+            sign_depth_img = depth_img[y_min:y_max, x_min:x_max]
+            dist = np.mean(sign_depth_img)
+            self.publisher.publish(dist)
 
     def test_bounding_box(self, img_file_name):
         bgr_img = cv2.imread(img_file_name)
