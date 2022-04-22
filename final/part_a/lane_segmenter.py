@@ -35,7 +35,7 @@ class LaneSegmenter():
         # TODO: Crop the image to only look at a certain part of the frame where the lines will be
         # https://www.analyticsvidhya.com/blog/2020/05/tutorial-real-time-lane-detection-opencv/
         # See ^ for examples of cropping and doing cv2 stuff
-        mask = cd_color_segmentation(rot_image, 0)
+        mask = cd_color_segmentation(rot_image, 195)
         self.mask_pub.publish(self.bridge.cv2_to_imgmsg(mask, "mono8"))
 
 if __name__ == '__main__':
