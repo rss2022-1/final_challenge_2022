@@ -38,6 +38,8 @@ def cd_color_segmentation(img, y_cutoff=0):
 				(x1, y1) is the top left of the bbox and (x2, y2) is the bottom right of the bbox
 	"""
 	########## YOUR CODE STARTS HERE ##########
+	# if img == None:
+	# 	return None
 	w = img.shape[1]
 	cropped_im = img
 	cv2.rectangle(cropped_im, (0,0), (w, y_cutoff), (0, 0, 0), -1)
@@ -62,7 +64,7 @@ def cd_color_segmentation(img, y_cutoff=0):
 	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	sensitivity = 60
+	sensitivity = 80
 	lower_white = np.array([0,0,255-sensitivity])
 	upper_white = np.array([255,sensitivity,255])
 	mask = cv2.inRange(hsv_img, lower_white, upper_white)
@@ -72,10 +74,10 @@ def cd_color_segmentation(img, y_cutoff=0):
 	return mask
 
 def test_segmentation():
-	# base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
-	# end = 17
-	base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
-	end = 10
+	base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
+	end = 17
+	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
+	# end = 10
 	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
 	# end = 24
 
@@ -86,6 +88,6 @@ def test_segmentation():
 		image_print(mask)
 		cv2.imwrite("masks/mask" + str(i) + ".jpg", mask)
 
-test_segmentation()
+# test_segmentation()
 
 

@@ -15,7 +15,7 @@
   </node>
 
   <!-- Launch homography transformer -->
-  <node pkg="final" type="homography_transformer.py" name="Homography_Transformer" output="screen">
+  <node pkg="final" type="homography_transformer.py" name="homography_transformer" output="screen">
 	</node>
 
   <!-- Launch Lane Segmenter -->
