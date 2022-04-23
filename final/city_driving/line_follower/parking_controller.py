@@ -30,7 +30,6 @@ class ParkingController():
 
         self.parking_distance = .1 # meters; try playing with this number!
         self.eps = 0.05
-        self.slow_range = 0.1
         self.relative_x = 0
         self.relative_y = 0
 
@@ -44,11 +43,11 @@ class ParkingController():
         velocity = rospy.get_param("parking_controller/velocity")
 
         # Correct distance from cone
-        if np.abs(self.relative_x - self.parking_distance) < self.slow_range:
+        if np.abs(self.relative_x - self.parking_distance) < self.parking_distance:
             # Also facing the cone
             if np.abs(self.relative_y) < self.eps:
-                velocity *= (self.relative_x-self.parking_distance)/self.slow_range
-                self.create_message(velocity, 0)
+                # velocity *= (self.relative_x-self.parking_distance)/self.slow_range
+                self.create_message(0, 0)
             # Need to adjust angle
             else:
                 # Back up a bit, then re-park
@@ -63,7 +62,7 @@ class ParkingController():
                     self.drive_pub.publish(self.drive_cmd)
                     self.error_publisher()
         # Cone too far in front
-        elif self.relative_x - self.parking_distance > self.slow_range:
+        elif self.relative_x - self.parking_distance > self.parking_distance:
             error = self.relative_y
             output = self.pid_controller(error)
             if output > 0:
