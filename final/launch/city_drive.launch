@@ -11,6 +11,4 @@
 
     <node pkg="final" name="cone_detector" type="cone_detector.py" output="screen">
     </node>
-    
-  </node>
 </launch>
