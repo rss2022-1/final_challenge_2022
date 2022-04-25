@@ -70,13 +70,14 @@ class CityDriver:
         """
         relative_x = msg.x
         relative_y = msg.y
-        rospy.loginfo(msg)
+        velocity = self.normal_speed
+        #rospy.loginfo(msg)
         #rospy.loginfo("got cone msg")
 
         # Correct distance from cone
         if np.abs(relative_x - self.parking_distance) < self.parking_distance:
             # Also facing the cone
-            rospy.loginfo("perfect distance")
+            #rospy.loginfo("perfect distance")
             if np.abs(relative_y) < self.eps:
                 self.steering_angle = 0
             # Need to adjust angle
@@ -94,18 +95,19 @@ class CityDriver:
                     self.drive_pub.publish(self.drive_message)
         # Cone too far in front
         elif relative_x - self.parking_distance > self.parking_distance:
-            rospy.loginfo("go forward")
+            #rospy.loginfo("go forward")
             error = relative_y
             output = self.pid_controller(error)
             if output > 0:
                 angle = min(0.34, output)
             elif output <= 0:
                 angle = max(-0.34, output)
+            angle = self.compute_steering_angle(relative_x, relative_y)
             self.steering_angle = angle
         # Cone too close
         # Do we even need this part? Needed for parking controller but prob not line follower
         elif relative_x - self.parking_distance < -self.eps:
-            rospy.loginfo("back up")
+            #rospy.loginfo("back up")
             error = -relative_y
             output = self.pid_controller(error)
             if output > 0:
@@ -127,6 +129,16 @@ class CityDriver:
         self.previous_time = curr_time
         return output
 
+    def compute_steering_angle(self, x, y):
+        x_curr, y_curr, theta_curr = 0.0, 0.0, 0.0
+        car_vector = (np.cos(theta_curr), np.sin(theta_curr))
+        reference_vector = (x - x_curr, y - y_curr)
+        l_1 = np.linalg.norm(reference_vector)
+        eta = np.arccos(np.dot(car_vector, reference_vector)/np.linalg.norm(car_vector)*l_1)
+        delta = np.arctan(2*.35*np.sin(eta)/l_1)
+        sign = np.sign(np.cross(car_vector, reference_vector))
+        return sign * delta
+
     def drive_controller(self):
         """
         Master logic for city driving
@@ -140,7 +152,7 @@ class CityDriver:
         else:
             # Keep going
             if self.stop_signal == 0:
-                rospy.loginfo("driving")
+                #rospy.loginfo("driving")
                 self.create_message(self.normal_speed, self.steering_angle)
                 self.drive_pub.publish(self.drive_message)
             # Slow down

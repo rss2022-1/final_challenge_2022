@@ -49,8 +49,22 @@ class ConeDetector():
         center_x, center_y = (brx - tlx)/2.0 + tlx, bry
 
         cone_location = Point()
-        cone_location.x = w - center_x
+        center_img_y = h//2
+        center_img_x = w//2
+        thresh = 50
+        if center_x < center_img_x - thresh:
+            #rospy.loginfo("left")
+            cone_location.x = w - tlx 
+        elif center_x > center_img_x + thresh:
+            #rospy.loginfo("right")
+            cone_location.x = w - brx
+        else:
+            #rospy.loginfo("center")
+            cone_location.x = w - center_x
+            #cone_location.x = center_x
+        
         cone_location.y = h - center_y
+        #cone_location.y = center_y
         cone_location.z = 0
         self.cone_pub.publish(cone_location)
         cv2.rectangle(rot_image, bb[0], bb[1], (255,0,0), 1)

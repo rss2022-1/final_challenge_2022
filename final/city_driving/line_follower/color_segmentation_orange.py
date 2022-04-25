@@ -40,8 +40,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     if img is None:
     	return None
     h,w = img.shape[:2]
-    start_y = 280
-    end_y = 330
+    start_y = 170
+    end_y = 300
     cropped_im = img.copy()
     cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
     cv2.rectangle(cropped_im, (0, end_y), (w, h), (255, 255, 255), -1)
@@ -50,8 +50,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     hsv_img = cv2.cvtColor(cropped_im, cv2.COLOR_BGR2HSV)
 
     # Erode TODO: RE-TUNE THESE VALUES
-    cropped_im = cv2.erode(cropped_im, np.ones((8, 8), 'uint8'), iterations=1)
-    cropped_im = cv2.dilate(cropped_im, np.ones((16,16), 'uint8'), iterations=1)
+    #cropped_im = cv2.erode(cropped_im, np.ones((8, 8), 'uint8'), iterations=1)
+    cropped_im = cv2.dilate(cropped_im, np.ones((50,50), 'uint8'), iterations=1)
 
     # Filter HSV values to get one with the orange line color, creating mask while doing so
     sensitivity = 80
@@ -74,7 +74,7 @@ def cd_color_segmentation(img, y_cutoff=0):
             best_x = x
             best_y = y
 
-    # cv2.rectangle(mask,(best_x,best_y),(best_x+max_w,best_y+max_h),(255,0,0),1)
+    cv2.rectangle(mask,(best_x,best_y),(best_x+max_w,best_y+max_h),(255,0,0),1)
 
     bounding_box = ((best_x,best_y),(best_x+max_w,best_y+max_h))
     # image_print(img)
