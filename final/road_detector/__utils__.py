@@ -3,17 +3,17 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 # TODO: Modify the patch height and width
-patch_H, patch_W = None, None
+patch_H, patch_W = 20, 20
 # TODO: Modify the path to model weights
 path_to_model_weights = "/path/to/model/weights.pth"
 
 def open_img_as_array(img_path):
-    """ 
+    """
     Opens image at specified path as torch.tensor.
-    
+
     Args:
         img_path: str path to image to open
-    
+
     Returns:
         np.array representation of the image of size [3, h, w]
     """
@@ -23,17 +23,17 @@ def open_img_as_array(img_path):
 def split_img(img, dims, use_patch_size=True):
     """
     Splits image into evenly-sized patches
-    
+
     Args:
         img: torch.tensor image of size [channels=3, h, w]
         dims: tuple of size 2 containing [H, W]
         use_patch_size: bool stating whether to treat [H, W]
             as the dimensions of the patch (default) or as the number of patches
             to break the image into
-    
+
     Returns:
         torch.tensor of size [num_h, num_w, 3, h // num_h, w // num_w]
-            where the first two indices represent the patch index. 
+            where the first two indices represent the patch index.
             (0, 0) would be the upper left patch
     """
     if use_patch_size:
