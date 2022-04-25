@@ -13,9 +13,6 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point, Point32
 from color_segmentation_orange import cd_color_segmentation
 
-# import your color segmentation algorithm; call this function in ros_image_callback!
-from computer_vision.color_segmentation import cd_color_segmentation
-
 class ConeDetector():
     """
     A class for applying your cone detection algorithms to the real robot.

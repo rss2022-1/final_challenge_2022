@@ -3,7 +3,6 @@
 import rospy
 import numpy as np
 import time
-from city_driving.msg import ConeLocation
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Point, Point32
@@ -49,6 +48,8 @@ class CityDriver:
         # if distance < 1 meter set self.stop = True
         # else self.stop = False
 
+        distance = msg.data
+
         pass
 
     def collision_callback(self, msg):
@@ -85,7 +86,7 @@ class CityDriver:
                         angle = min(0.34, output)
                     elif output <= 0:
                         angle = max(-0.34, output)
-                    self.create_message(-velocity, angle)
+                    self.create_message(-self.slow_speed, angle)
                     self.drive_pub.publish(self.drive_message)
         # Cone too far in front
         elif relative_x - self.parking_distance > self.parking_distance:
