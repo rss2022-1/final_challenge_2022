@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 import time
 from ackermann_msgs.msg import AckermannDriveStamped
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from geometry_msgs.msg import Point, Point32
 
 class CityDriver:
@@ -15,10 +15,11 @@ class CityDriver:
 
     def __init__(self):
         self.stop_sign_sub = rospy.Subscriber("/stop_sign_distance", Float32, self.stop_callback)
-        self.collision_sub = rospy.Subscriber("/collision_checker", bool, self.collision_callback)
+        self.collision_sub = rospy.Subscriber("/collision_checker", Bool, self.collision_callback)
         self.cone_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.cone_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
+        rospy.loginfo(DRIVE_TOPIC)
         self.slow_speed = 0.2
         self.normal_speed = 0.5
         self.fast_speed = 1
@@ -69,10 +70,13 @@ class CityDriver:
         """
         relative_x = msg.x
         relative_y = msg.y
+        rospy.loginfo(msg)
+        #rospy.loginfo("got cone msg")
 
         # Correct distance from cone
         if np.abs(relative_x - self.parking_distance) < self.parking_distance:
             # Also facing the cone
+            rospy.loginfo("perfect distance")
             if np.abs(relative_y) < self.eps:
                 self.steering_angle = 0
             # Need to adjust angle
@@ -90,6 +94,7 @@ class CityDriver:
                     self.drive_pub.publish(self.drive_message)
         # Cone too far in front
         elif relative_x - self.parking_distance > self.parking_distance:
+            rospy.loginfo("go forward")
             error = relative_y
             output = self.pid_controller(error)
             if output > 0:
@@ -100,6 +105,7 @@ class CityDriver:
         # Cone too close
         # Do we even need this part? Needed for parking controller but prob not line follower
         elif relative_x - self.parking_distance < -self.eps:
+            rospy.loginfo("back up")
             error = -relative_y
             output = self.pid_controller(error)
             if output > 0:
@@ -107,6 +113,7 @@ class CityDriver:
             elif output <= 0:
                 angle = max(-0.34, output)
             self.steering_angle = angle
+        self.drive_controller()
 
     def pid_controller(self, error):
         curr_time = time.time()
@@ -133,6 +140,7 @@ class CityDriver:
         else:
             # Keep going
             if self.stop_signal == 0:
+                rospy.loginfo("driving")
                 self.create_message(self.normal_speed, self.steering_angle)
                 self.drive_pub.publish(self.drive_message)
             # Slow down

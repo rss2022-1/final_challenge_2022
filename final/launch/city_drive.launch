@@ -3,7 +3,7 @@
   </node> -->
 
     <node pkg="final" name="city_driver" type="city_driver.py" output="screen">\
-        <param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation"/>
+        <param name="drive_topic" value="/vesc/high_level/ackermann_cmd_mux/input/nav_1"/>
     </node>
 
     <node pkg="final" name="homography_transformer" type="homography_transformer.py" output="screen">
@@ -11,4 +11,7 @@
 
     <node pkg="final" name="cone_detector" type="cone_detector.py" output="screen">
     </node>
+
+    <!-- <node pkg="final" name="stop_detector" type="stop_detector.py" output="screen">
+    </node> -->
 </launch>

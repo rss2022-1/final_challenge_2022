@@ -53,9 +53,9 @@ class ConeDetector():
         cone_location.y = h - center_y
         cone_location.z = 0
         self.cone_pub.publish(cone_location)
-        # cv2.rectangle(rot_image, bb[0], bb[1], (255,0,0), 1)
-        # debug_msg = self.bridge.cv2_to_imgmsg(mask, "8UC1")
-        # self.debug_pub.publish(debug_msg)
+        cv2.rectangle(rot_image, bb[0], bb[1], (255,0,0), 1)
+        debug_msg = self.bridge.cv2_to_imgmsg(mask, "passthrough")
+        self.debug_pub.publish(debug_msg)
 
 if __name__ == '__main__':
     try:

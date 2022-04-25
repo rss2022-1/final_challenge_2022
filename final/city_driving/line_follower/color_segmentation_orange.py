@@ -57,8 +57,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     sensitivity = 80
     # [Hue, Saturation, Value]
     # Bright orange
-    # orange_min = np.array([5, 170, 170],np.uint8)
-    # orange_max = np.array([100, 255, 255],np.uint8)
+    #orange_min = np.array([5, 170, 170],np.uint8)
+    #orange_max = np.array([100, 255, 255],np.uint8)
     # Light orange
     orange_min = np.array([10, 120, 20],np.uint8)
     orange_max = np.array([25, 255, 255],np.uint8)
