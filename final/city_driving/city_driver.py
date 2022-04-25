@@ -6,6 +6,7 @@ import time
 from city_driving.msg import ConeLocation
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float32
+from geometry_msgs.msg import Point, Point32
 
 class CityDriver:
 
@@ -16,7 +17,7 @@ class CityDriver:
     def __init__(self):
         self.stop_sign_sub = rospy.Subscriber("/stop_sign_distance", Float32, self.stop_callback)
         self.collision_sub = rospy.Subscriber("/collision_checker", bool, self.collision_callback)
-        self.cone_sub = rospy.Subscriber("/relative_cone", ConeLocation, self.cone_callback)
+        self.cone_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.cone_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
         self.slow_speed = 0.2
@@ -65,8 +66,8 @@ class CityDriver:
         Based on relative cone position, create a drive message
         Modifies class variable self.steering_angle
         """
-        relative_x = msg.x_pos
-        relative_y = msg.y_pos
+        relative_x = msg.x
+        relative_y = msg.y
 
         # Correct distance from cone
         if np.abs(relative_x - self.parking_distance) < self.parking_distance:
@@ -117,7 +118,6 @@ class CityDriver:
         self.previous_error = error
         self.previous_time = curr_time
         return output
-
 
     def drive_controller(self):
         """

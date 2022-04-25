@@ -109,6 +109,6 @@ def test_segmentation():
         image_print(img)
         # cv2.imwrite(base_path + "/line_masks/mask" + str(i) + ".jpg", mask)
 
-test_segmentation()
+# test_segmentation()
 
 
