@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 import time
 from ackermann_msgs.msg import AckermannDriveStamped
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
 from geometry_msgs.msg import Point, Point32
 
 class CityDriver:
@@ -15,7 +15,7 @@ class CityDriver:
 
     def __init__(self):
         self.stop_sign_sub = rospy.Subscriber("/stop_sign_distance", Float32, self.stop_callback)
-        self.collision_sub = rospy.Subscriber("/collision_checker", bool, self.collision_callback)
+        self.collision_sub = rospy.Subscriber("/collision_checker", Bool, self.collision_callback)
         self.cone_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.cone_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
@@ -49,8 +49,21 @@ class CityDriver:
         # else self.stop = False
 
         distance = msg.data
-
-        pass
+        if self.stop_signal == 2:
+            curr_time = time.time()
+            if curr_time - self.stopped_time > 1:
+                self.stop_signal = 3
+        else:
+            if distance > 5:
+                self.stop_signal = 0
+            elif (distance > 0.9 or distance < 5):
+                self.stop_signal = 1
+            elif (distance > 0.75 or distance < 9):
+                if self.stop_signal != 3:
+                    self.stop_signal = 2
+                    self.stopped_time = time.time()
+            elif distance < 0.75:
+                self.stop_signal = 3
 
     def collision_callback(self, msg):
         """

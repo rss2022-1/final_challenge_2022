@@ -43,7 +43,7 @@ class ConeDetector():
         rot_image = imutils.rotate(base_image, 180)
         (h,w) = rot_image.shape[:2]
 
-        bb, mask = cd_color_segmentation(cropped_image, None)
+        bb, mask = cd_color_segmentation(rot_image, None)
         tlx, tly = bb[0] # top left
         brx, bry = bb[1] # back right
         center_x, center_y = (brx - tlx)/2.0 + tlx, bry
@@ -59,7 +59,7 @@ class ConeDetector():
 
 if __name__ == '__main__':
     try:
-        # rospy.init_node('ConeDetector', anonymous=True)
+        rospy.init_node('ConeDetector', anonymous=True)
         ConeDetector()
         rospy.spin()
         # test_find_line()
