@@ -132,7 +132,7 @@ class CityDriver:
         car_vector = (np.cos(theta_curr), np.sin(theta_curr))
         reference_vector = (x - x_curr, y - y_curr)
         l_1 = np.linalg.norm(reference_vector)
-        eta = np.arccos(np.dot(car_vector, reference_vector)/np.linalg.norm(car_vector)*l_1)
+        eta = np.arccos(np.dot(car_vector, reference_vector)/(np.linalg.norm(car_vector)*l_1))
         delta = np.arctan(2*.35*np.sin(eta)/l_1)
         sign = np.sign(np.cross(car_vector, reference_vector))
         return sign * delta
