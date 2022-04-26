@@ -137,7 +137,7 @@ class CollisionChecker:
             self.previous_scans = None
             self.flag = False
 
-        min_dist = rospy.get_param("collision_checker/time_to_crash") * self.current_drive.velocity
+        min_dist = rospy.get_param("collision_checker/time_to_crash") * self.current_drive.drive.speed
         if self.goingToCrash(min_dist):
             self.dont()
 

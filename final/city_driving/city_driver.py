@@ -15,7 +15,7 @@ class CityDriver:
 
     def __init__(self):
         self.stop_sign_sub = rospy.Subscriber("/stop_sign_distance", Float32, self.stop_callback)
-        self.collision_sub = rospy.Subscriber("/collision_checker", Bool, self.collision_callback)
+        #self.collision_sub = rospy.Subscriber("/collision_checker", Bool, self.collision_callback)
         self.cone_sub = rospy.Subscriber("/relative_lookahead_point", Point32, self.cone_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic")
@@ -33,9 +33,10 @@ class CityDriver:
         # self.eps = 0.05
         self.previous_error = 0
         self.integral = 0
+        self.steering_angle = 0
         self.previous_time = time.time() # For PID controller
         self.stopped_time = time.time() # Measures time to stop at sign
-        self.backup_time - time.time() # Measures time to back up
+        self.backup_time = time.time() # Measures time to back up
 
     def stop_callback(self, msg):
         """
