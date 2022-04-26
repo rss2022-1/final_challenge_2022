@@ -31,6 +31,7 @@ class ConeDetector():
         self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
+        self.prev_px = (0, 0, 0)
 
     def image_callback(self, image_msg):
         # Apply your imported color segmentation function (cd_color_segmentation) to the image msg here
@@ -44,32 +45,38 @@ class ConeDetector():
         (h,w) = rot_image.shape[:2]
 
         bb, mask = cd_color_segmentation(rot_image, None)
-        tlx, tly = bb[0] # top left
-        brx, bry = bb[1] # back right
-        center_x, center_y = (brx - tlx)/2.0 + tlx, bry
+        if bb:
+            tlx, tly = bb[0] # top left
+            brx, bry = bb[1] # back right
+            center_x, center_y = (brx - tlx)/2.0 + tlx, bry
 
-        cone_location = Point()
-        center_img_y = h//2
-        center_img_x = w//2
-        thresh = 50
-        if center_x < center_img_x - thresh:
-            #rospy.loginfo("left")
-            cone_location.x = w - tlx 
-        elif center_x > center_img_x + thresh:
-            #rospy.loginfo("right")
-            cone_location.x = w - brx
-        else:
-            #rospy.loginfo("center")
-            cone_location.x = w - center_x
-            #cone_location.x = center_x
+            cone_location = Point()
+            center_img_y = h//2
+            center_img_x = w//2
+            thresh = 30
+            if center_x < center_img_x - thresh:
+                #rospy.loginfo("left")
+                cone_location.x = w - tlx 
+            elif center_x > center_img_x + thresh:
+                #rospy.loginfo("right")
+                cone_location.x = w - brx
+            else:
+                #rospy.loginfo("center")
+                cone_location.x = w - center_x
+                #cone_location.x = center_x
         
-        cone_location.y = h - center_y
-        #cone_location.y = center_y
-        cone_location.z = 0
-        self.cone_pub.publish(cone_location)
-        cv2.rectangle(rot_image, bb[0], bb[1], (255,0,0), 1)
-        debug_msg = self.bridge.cv2_to_imgmsg(mask, "passthrough")
-        self.debug_pub.publish(debug_msg)
+            cone_location.y = h - center_y
+            #cone_location.y = center_y
+            cone_location.z = 0
+            self.prev_px = (cone_location.x, cone_location.y, cone_location.z)
+            self.cone_pub.publish(cone_location)
+            cv2.rectangle(rot_image, bb[0], bb[1], (255,255,0), 1)
+            debug_msg = self.bridge.cv2_to_imgmsg(mask, "passthrough")
+            self.debug_pub.publish(debug_msg)
+        else:
+            cone_location = Point()
+            cone_location.x, cone_location.y, cone_location.z = prev_px
+            self.cone_pub.publish(cone_location)
 
 if __name__ == '__main__':
     try:

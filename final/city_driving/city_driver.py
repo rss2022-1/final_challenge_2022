@@ -110,7 +110,7 @@ class CityDriver:
                 angle = min(0.34, output)
             elif output <= 0:
                 angle = max(-0.34, output)
-            angle = self.compute_steering_angle(relative_x, relative_y)
+            angle = self.compute_steering_angle(relative_x+.1, relative_y)
             self.steering_angle = angle
         # Cone too close
         # Do we even need this part? Needed for parking controller but prob not line follower
