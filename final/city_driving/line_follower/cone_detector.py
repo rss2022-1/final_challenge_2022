@@ -75,7 +75,7 @@ class ConeDetector():
             self.debug_pub.publish(debug_msg)
         else:
             cone_location = Point()
-            cone_location.x, cone_location.y, cone_location.z = prev_px
+            cone_location.x, cone_location.y, cone_location.z = self.prev_px
             self.cone_pub.publish(cone_location)
 
 if __name__ == '__main__':
