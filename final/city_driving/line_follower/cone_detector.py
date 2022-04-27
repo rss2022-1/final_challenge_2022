@@ -44,7 +44,7 @@ class ConeDetector():
         rot_image = imutils.rotate(base_image, 180)
         (h,w) = rot_image.shape[:2]
 
-        mask = cd_color_segmentation(rot_image, None)
+        mask = cd_color_segmentation(rot_image)
         cdstP, lines = get_contours(mask)
         lookahead_point = find_lookahead_point(lines)
         if lookahead_point:

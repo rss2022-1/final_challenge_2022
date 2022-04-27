@@ -64,8 +64,8 @@ def cd_color_segmentation(img, y_cutoff=0):
 	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	orange_min = np.array([10, 80, 80], np.uint8)
-	orange_max = np.array([32, 255, 255], np.uint8)
+	orange_min = np.array([10, 80, 100], np.uint8)
+	orange_max = np.array([30, 255, 255], np.uint8)
 	mask = cv2.inRange(hsv_img, orange_min, orange_max)
 	# sensitivity = 80
 	# lower_white = np.array([0,0,255-sensitivity])
@@ -81,7 +81,7 @@ def get_contours(src):
 	# Copy edges to the images that will display the results in BGR
 	cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
 
-	linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 30, 500)
+	linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 70, 500)
 
 	prev_lines = [] # (theta, x1, y1, x2, y2, v)
 
@@ -102,7 +102,7 @@ def get_contours(src):
 			# new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
 			prev_lines.append([th, x1, y1, x2, y2, scaled_v])
 			cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
-	return cdstP, np.array(prev_lines)
+	return cdstP, prev_lines
 
 def line(p1, p2):
     A = (p1[1] - p2[1])
@@ -166,6 +166,5 @@ def test_segmentation():
 		image_print(image)
 		# cv2.imwrite("masks/mask" + str(i) + ".jpg", mask)
 
-test_segmentation()
 
 
