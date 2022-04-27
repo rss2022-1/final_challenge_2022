@@ -40,6 +40,7 @@ def cd_color_segmentation(img, y_cutoff=0):
 	########## YOUR CODE STARTS HERE ##########
 	# if img == None:
 	# 	return None
+        h = img.shape[0]
 	w = img.shape[1]
 	cropped_im = img
 	cv2.rectangle(cropped_im, (0,0), (w, y_cutoff), (0, 0, 0), -1)
@@ -55,6 +56,19 @@ def cd_color_segmentation(img, y_cutoff=0):
 	l_w_corner = (w - w_offset, y_cutoff)
 	l_triangle_cnt = np.array([l_corner, l_down_corner, l_w_corner])
 	cv2.drawContours(cropped_im, [l_triangle_cnt], 0, (0,0,0), -1)
+        rec_y = h - 170
+        t_offset_rec = 60
+        t_offset = 80
+        rec_x_l = int(w/2 - t_offset_rec)
+        rec_x_r = int(w/2 + t_offset_rec)
+        left_x = int(rec_x_l - t_offset)
+        right_x = int(rec_x_r + t_offset)
+        cv2.rectangle(cropped_im, (rec_x_l, rec_y), (rec_x_r, h), (0, 0, 0), -1)
+        bot_r_triangle = np.array([(rec_x_r, rec_y), (rec_x_r, h), (right_x, h)])
+        bot_l_triangle = np.array([(rec_x_l, rec_y), (rec_x_l, h), (left_x, h)])
+        cv2.drawContours(cropped_im, [bot_r_triangle], 0, (0, 0, 0), -1)
+        cv2.drawContours(cropped_im, [bot_l_triangle], 0, (0, 0, 0), -1)
+
 
 	# Change color space to HSV
 	hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)

@@ -40,7 +40,7 @@ def cd_color_segmentation(img, y_cutoff=0):
     if img is None:
     	return None
     h,w = img.shape[:2]
-    start_y = 280
+    start_y = 200
     end_y = 330
     cropped_im = img.copy()
     cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
@@ -50,8 +50,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     hsv_img = cv2.cvtColor(cropped_im, cv2.COLOR_BGR2HSV)
 
     # Erode TODO: RE-TUNE THESE VALUES
-    cropped_im = cv2.erode(cropped_im, np.ones((8, 8), 'uint8'), iterations=1)
-    cropped_im = cv2.dilate(cropped_im, np.ones((16,16), 'uint8'), iterations=1)
+    #cropped_im = cv2.erode(cropped_im, np.ones((8, 8), 'uint8'), iterations=1)
+    cropped_im = cv2.dilate(cropped_im, np.ones((50,50), 'uint8'), iterations=1)
 
     # Filter HSV values to get one with the orange line color, creating mask while doing so
     sensitivity = 80
@@ -60,8 +60,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     # orange_min = np.array([5, 170, 170],np.uint8)
     # orange_max = np.array([100, 255, 255],np.uint8)
     # Light orange
-    orange_min = np.array([10, 120, 20],np.uint8)
-    orange_max = np.array([25, 255, 255],np.uint8)
+    orange_min = np.array([10, 80, 100],np.uint8)
+    orange_max = np.array([30, 255, 255],np.uint8)
     mask = cv2.inRange(hsv_img, orange_min, orange_max)
     
     contours, hierarchy = cv2.findContours(mask,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[-2:]
@@ -74,7 +74,7 @@ def cd_color_segmentation(img, y_cutoff=0):
             best_x = x
             best_y = y
 
-    # cv2.rectangle(mask,(best_x,best_y),(best_x+max_w,best_y+max_h),(255,0,0),1)
+    cv2.rectangle(mask,(best_x,best_y),(best_x+max_w,best_y+max_h),(255,255,0),3)
 
     bounding_box = ((best_x,best_y),(best_x+max_w,best_y+max_h))
     # image_print(img)
