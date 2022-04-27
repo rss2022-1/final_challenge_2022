@@ -53,11 +53,11 @@ class ConeDetector():
             cone_location = Point()
             center_img_y = h//2
             center_img_x = w//2
-            thresh = 30
-            if center_x < center_img_x - thresh:
+            thresh = 60
+            if w-tlx < center_img_x - thresh:
                 #rospy.loginfo("left")
                 cone_location.x = w - tlx 
-            elif center_x > center_img_x + thresh:
+            elif w-brx > center_img_x + thresh:
                 #rospy.loginfo("right")
                 cone_location.x = w - brx
             else:

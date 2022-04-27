@@ -15,8 +15,7 @@
     <!-- <node pkg="final" name="stop_detector" type="stop_detector.py" output="screen">
     </node> -->
 
-    <node pkg="final" name="collision_checker" type="collision_checker.py" output="screen">
-    </node>
+    <!-- <node pkg="final" name="collision_checker" type="collision_checker.py" output="screen">
+    </node> -->
     
-  </node>
 </launch>
