@@ -11,7 +11,7 @@ import imutils
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point, Point32
-from color_segmentation_orange import cd_color_segmentation
+from color_segmentation_alex_test import cd_color_segmentation, get_contours, find_lookahead_point
 
 class ConeDetector():
     """
@@ -44,39 +44,20 @@ class ConeDetector():
         rot_image = imutils.rotate(base_image, 180)
         (h,w) = rot_image.shape[:2]
 
-        bb, mask = cd_color_segmentation(rot_image, None)
-        if bb:
-            tlx, tly = bb[0] # top left
-            brx, bry = bb[1] # back right
-            center_x, center_y = (brx - tlx)/2.0 + tlx, bry
-
+        mask = cd_color_segmentation(rot_image, None)
+        cdstP, lines = get_contours(mask)
+        lookahead_point = find_lookahead_point(lines)
+        if lookahead_point:
             cone_location = Point()
-            center_img_y = h//2
-            center_img_x = w//2
-            thresh = 60
-            if w-tlx < center_img_x - thresh:
-                #rospy.loginfo("left")
-                cone_location.x = w - tlx 
-            elif w-brx > center_img_x + thresh:
-                #rospy.loginfo("right")
-                cone_location.x = w - brx
-            else:
-                #rospy.loginfo("center")
-                cone_location.x = w - center_x
-                #cone_location.x = center_x
-        
-            cone_location.y = h - center_y
-            #cone_location.y = center_y
+            cone_location.x = w - lookahead_point[0]
+            cone_location.y = h - lookahead_point[1]
             cone_location.z = 0
-            self.prev_px = (cone_location.x, cone_location.y, cone_location.z)
             self.cone_pub.publish(cone_location)
-            cv2.rectangle(rot_image, bb[0], bb[1], (255,255,0), 1)
-            debug_msg = self.bridge.cv2_to_imgmsg(mask, "passthrough")
+            cv2.circle(cdstP, (lookahead_point[0], lookahead_point[1]), radius=4, color=(0, 255, 0), thickness=-1)
+            debug_msg = self.bridge.cv2_to_imgmsg(cdstP, "passthrough")
             self.debug_pub.publish(debug_msg)
         else:
-            cone_location = Point()
-            cone_location.x, cone_location.y, cone_location.z = prev_px
-            self.cone_pub.publish(cone_location)
+            rospy.loginfo("Couln't find lookahead point")
 
 if __name__ == '__main__':
     try:
