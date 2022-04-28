@@ -313,7 +313,7 @@ def test_get_lanes():
 
 def test_get_intersection():
     masks_path = os.path.abspath(os.getcwd()) + "/masks/"
-    for i in range(1, 17):
+    for i in range(4, 9):
         src = cv2.imread(masks_path + "mask" + str(i) + ".jpg")
         cdstP, lines = get_contours(src)
         image_print(cdstP)

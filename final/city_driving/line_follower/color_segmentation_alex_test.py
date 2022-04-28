@@ -41,9 +41,14 @@ def cd_color_segmentation(img, y_cutoff=0):
 	########## YOUR CODE STARTS HERE ##########
 	# if img == None:
 	# 	return None
-	w = img.shape[1]
-	cropped_im = img
-	cv2.rectangle(cropped_im, (0,0), (w, y_cutoff), (0, 0, 0), -1)
+	if img is None:
+		return None
+	h,w = img.shape[:2]
+	start_y = 200
+	end_y = 330
+	cropped_im = img.copy()
+	cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
+	cv2.rectangle(cropped_im, (0, end_y), (w, h), (255, 255, 255), -1)	
 	w_offset = 200
 	h_offset = 40 + y_cutoff
 	r_corner = (0, y_cutoff)
@@ -58,11 +63,11 @@ def cd_color_segmentation(img, y_cutoff=0):
 	cv2.drawContours(cropped_im, [l_triangle_cnt], 0, (0,0,0), -1)
 
 	# Change color space to HSV
-	hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+	hsv_img = cv2.cvtColor(cropped_im, cv2.COLOR_BGR2HSV)
 
 	# Erode TODO: RE-TUNE THESE VALUES
-	img = cv2.erode(img, np.ones((8, 8), 'uint8'), iterations=1)
-	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
+	# hsv_img = cv2.erode(hsv_img, np.ones((8, 8), 'uint8'), iterations=1)
+	# hsv_img = cv2.dilate(hsv_img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
 	orange_min = np.array([10, 80, 80], np.uint8)
@@ -139,8 +144,8 @@ def find_lookahead_point(lane_segments, w, h):
 	center = np.array([w//2, h])
 	lookahead = 200
 	intersections = []
-	print("NUM LINES: ", len(lane_segments))
-	for _, x1, y1, x2, y2, _ in lane_segments:
+	ts = []
+	for th, x1, y1, x2, y2, _ in lane_segments:
 		p1 = np.array([x1, y1])
 		p2 = np.array([x2, y2])
 		V = p2 - p1
@@ -155,31 +160,34 @@ def find_lookahead_point(lane_segments, w, h):
 			t1 = (-b + sqrt_disc) / (2 * a)
 			t2 = (-b - sqrt_disc) / (2 * a)
 			if 0 <= t1 <= 1 and 0 <= t2 <= 1:
-				print("Found intersection on line")
 				t = np.mean([t1, t2], axis=0)
 			elif 0 <= t1 <= 1:
-				print("Found one intersection")
 				t = t1
 			elif 0 <= t2 <= 1:
-				print("Found one intersection")
 				t = t2
 			else:
-				print("found multiple off segment")
 				t = t1
 			result =  p1 + t * V
 			print("p1 + t * V = ", p1 + t * V)
 			intersections.append(p1 + t * V)
-	if len(intersections) == 0:
-		return (0, 0)
-	print(intersections)
-	result = np.mean(intersections, axis=0)
-	print("RESULT: ", int(result[0]), int(result[1]))
+			ts.append(t)
+	direct_intersections = []
+	for i in range(len(intersections)):
+		point, t = intersections[i], ts[i]
+		if t <= 1 and t >= 0:
+			direct_intersections.append((int(point[0]), int(point[1])))
+	if len(direct_intersections) > 0:
+		result = np.mean(direct_intersections, axis=0)
+	elif len(intersections) == 0:
+		result = (0, 0)
+	else:
+		result = np.mean(intersections, axis=0)
 	return (int(result[0]), int(result[1]))
 
 
 def test_segmentation():
 	base_path = os.path.dirname(os.getcwd()) + "/line_follower/test_lines/stop"
-	end = 7
+	end = 9
 	# base_path = os.path.abspath(os.getcwd()) + "/test_curve_low_speed/"
 	# end = 17
 	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
@@ -187,9 +195,10 @@ def test_segmentation():
 	# base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
 	# end = 24
 
-	for i in range(1, end):
+	for i in range(4, end):
 		print(base_path + str(i) + ".png")
 		img = cv2.imread(base_path + str(i) + ".png")
+		image_print(img)
 		mask = cd_color_segmentation(img,195)
 		image_print(mask)
 		cdstP, lines = get_contours(mask)
