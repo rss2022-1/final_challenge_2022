@@ -40,7 +40,7 @@ def cd_color_segmentation(img, y_cutoff=0):
     if img is None:
     	return None
     h,w = img.shape[:2]
-    start_y = 280
+    start_y = 250
     end_y = 330
     cropped_im = img.copy()
     cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
