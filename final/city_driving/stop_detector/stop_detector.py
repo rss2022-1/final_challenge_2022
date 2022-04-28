@@ -5,7 +5,7 @@ import numpy as np
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
-from detector import StopSignDetector
+#from detector import StopSignDetector
 
 class SignDetector:
     
@@ -13,18 +13,18 @@ class SignDetector:
         self.use_depth = True
         self.use_online_detector = True
         if self.use_online_detector:
-            self.box_subscriber = rospy.Subscriber("stop_sign_bbox", Float32MultiArray, self.box_callback)
+            self.box_subscriber = rospy.Subscriber("/stop_sign_bbox", Float32MultiArray, self.box_callback)
         else:
             self.img_subscriber = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.img_callback)
         
         self.depth_subscriber = rospy.Subscriber("/zed/zed_node/depth/depth_registered", Image, self.depth_callback)
-        self.detector = StopSignDetector(threshold=0)
+        #self.detector = StopSignDetector(threshold=0)
         self.publisher = rospy.Publisher("/stop_sign_distance", Float32, queue_size=10) # distance to stop sign in meters
-        self.sign_bounding_box = [0, 0, 0, 0]
+        self.sign_bounding_box = ()
         self.dist_measurements = [0.8636, 1.1938, 1.6256] # distances away in meters stop sign images taken on bot
         self.area_measurements = [7246.09, 3515.56, 1856.76] # area of stop sign bounding box in pixels from stop sign images
         
-    
+    '''
     def img_callback(self, img_msg):
         # Process image without CV Bridge
         np_img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape(img_msg.height, img_msg.width, -1)
@@ -39,11 +39,12 @@ class SignDetector:
             self.publisher.publish(1000) # no stop sign found, so say it's 1000 meters away
         else:
             self.sign_bounding_box = bounding_box
-    
+    '''
     def depth_callback(self, img_msg):
         depth_img = np.frombuffer(img_msg.data, dtype=np.float32).reshape(img_msg.height, img_msg.width)
-        if self.sign_bounding_box != [0, 0, 0, 0]: # stop sign has been detected
+        if self.sign_bounding_box != (): # stop sign has been detected
             if self.use_depth:
+                dist = self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box)
                 self.publisher.publish(self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box))
             else:
                 self.publisher.publish(self.get_dist_to_sign_from_area(self.sign_bounding_box))
@@ -85,7 +86,7 @@ class SignDetector:
         """
         x_min, y_min, x_max, y_max = self.get_coords_from_box(bounding_box)
         return (x_max - x_min)*(y_max - y_min)
-
+    '''
     def test_bounding_box(self, img_file_name):
         bgr_img = cv2.imread(img_file_name)
         rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
@@ -115,10 +116,10 @@ class SignDetector:
                 print("distance to sign: " + str(self.get_dist_to_sign_from_depth(depth_npy, bounding_box)))
             else:
                 print("distance to sign: " + str(self.get_dist_to_sign_from_area(bounding_box)))
-
+    '''
 
 if __name__=="__main__":
-    rospy.init_node("stop_sign_detector")
+    rospy.init_node("our_stop_sign_detector")
     detect = SignDetector()
     # rgb_img_path = "../../road_detector/test_images/stopsign2/rgb/rgb45.png"
     # detect.test_bounding_box(rgb_img_path)
