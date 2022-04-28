@@ -40,8 +40,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     if img is None:
     	return None
     h,w = img.shape[:2]
-    start_y = 200
-    end_y = 330
+    start_y = 170
+    end_y = 300
     top_mid_y = (end_y - start_y)//3 + start_y
     bottom_mid_y = 2*(end_y - start_y)//3 + start_y
     cropped_im = img.copy()
