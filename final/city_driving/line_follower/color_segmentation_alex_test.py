@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import pdb
 import os
+from homography_transformer import HomographyTransformer
 
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
@@ -64,8 +65,8 @@ def cd_color_segmentation(img, y_cutoff=0):
 	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
-	orange_min = np.array([10, 80, 100], np.uint8)
-	orange_max = np.array([30, 255, 255], np.uint8)
+	orange_min = np.array([10, 80, 80], np.uint8)
+	orange_max = np.array([32, 255, 255], np.uint8)
 	mask = cv2.inRange(hsv_img, orange_min, orange_max)
 	# sensitivity = 80
 	# lower_white = np.array([0,0,255-sensitivity])
@@ -81,17 +82,17 @@ def get_contours(src):
 	# Copy edges to the images that will display the results in BGR
 	cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
 
-	linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 70, 500)
+	linesP = cv2.HoughLinesP(dst, 1, np.pi/180, 10, None, 80, 500)
 
 	prev_lines = [] # (theta, x1, y1, x2, y2, v)
 
 	if linesP is not None:
 		for i in range(0, len(linesP)):
-			x1, y1, x2, y2 = linesP[i][0]
-			v = np.array([x2-x1, y2-y1])
+			u1, v1, u2, v2 = linesP[i][0]
+			v = np.array([u2-u1, u2-v1])
 			th = np.arctan2(v[1], v[0])
-			pixel_epsilon = 80
-			scaled_v = 200 * (v / np.linalg.norm(v))
+			pixel_epsilon = 500
+			scaled_v = 1000 * (v / np.linalg.norm(v))
 			# Delete lines that are too horizontal
 			# if np.abs(th) < .15:
 
@@ -99,9 +100,9 @@ def get_contours(src):
 			# Delete lines that are similar to previous lines
 			if any([(np.linalg.norm(scaled_v - prev_line[5]) < pixel_epsilon) for prev_line in prev_lines]):
 				continue
-			# new_x2, new_y2 = get_intersection(x2, y2, x1, y1, w, h)
-			prev_lines.append([th, x1, y1, x2, y2, scaled_v])
-			cv2.line(cdstP, (x1, y1), (x2, y2), (0,0,255), 3, cv2.LINE_AA)
+			# new_u2, new_y2 = get_intersection(x2, y2, x1, v1, w, h)
+			prev_lines.append([th, u1, v1, u2, v2, scaled_v])
+			cv2.line(cdstP, (u1, v1), (u2, v2), (0,0,255), 3, cv2.LINE_AA)
 	return cdstP, prev_lines
 
 def line(p1, p2):
@@ -121,26 +122,60 @@ def intersection(L1, L2):
     else:
         return 0, 0
 
-def find_lookahead_point(lane_segments):
-    if len(lane_segments) == 0:
-        print("No lane segments found")
-        return (0,0,0)
-    px_lookahead = 250
-    lookahead_line = line((0, px_lookahead), (1000, px_lookahead))
-    intersections = []
-    for i in range(len(lane_segments)):
-        l = line(lane_segments[i][1:3], lane_segments[i][3:5])
-        x, y = intersection(lookahead_line, l)
-        intersections.append((x, y))
-    result = np.mean(intersections, axis=0)
-    return (int(result[0]), int(result[1]))
-        # intersections.append((x, y))
-    # if len(intersections) == 1:
-    #     print("One intersection found")
-    #     return (intersections[0][0], px_lookahead, 0)
-    # else:
-    #     print(str(len(intersections)) + " intersections found")
-    #     return (int((intersections[0][0] + intersections[1][0])/2.), px_lookahead, 0)
+def find_lookahead_point(lane_segments, w, h):
+    # if len(lane_segments) == 0:
+    #     print("No lane segments found")
+    #     return (0,0,0)
+    # px_lookahead = 250
+    # lookahead_line = line((0, px_lookahead), (1000, px_lookahead))
+    # intersections = []
+    # for i in range(len(lane_segments)):
+    #     l = line(lane_segments[i][1:3], lane_segments[i][3:5])
+    #     x, y = intersection(lookahead_line, l)
+    #     intersections.append((x, y))
+    # result = np.mean(intersections, axis=0)
+    # return (int(result[0]), int(result[1]))
+	# import pdb; pdb.set_trace()
+	center = np.array([w//2, h])
+	lookahead = 200
+	intersections = []
+	print("NUM LINES: ", len(lane_segments))
+	for _, x1, y1, x2, y2, _ in lane_segments:
+		p1 = np.array([x1, y1])
+		p2 = np.array([x2, y2])
+		V = p2 - p1
+		a = V.dot(V)
+		b = 2 * V.dot(p1-center)
+		c = p1.dot(p1) + center.dot(center) - 2 * p1.dot(center) - lookahead**2
+		disc = b**2 - 4 * a * c
+		if disc < 0:
+			continue
+		else:
+			sqrt_disc = np.sqrt(disc)
+			t1 = (-b + sqrt_disc) / (2 * a)
+			t2 = (-b - sqrt_disc) / (2 * a)
+			if 0 <= t1 <= 1 and 0 <= t2 <= 1:
+				print("Found intersection on line")
+				t = np.mean([t1, t2], axis=0)
+			elif 0 <= t1 <= 1:
+				print("Found one intersection")
+				t = t1
+			elif 0 <= t2 <= 1:
+				print("Found one intersection")
+				t = t2
+			else:
+				print("found multiple off segment")
+				t = t1
+			result =  p1 + t * V
+			print("p1 + t * V = ", p1 + t * V)
+			intersections.append(p1 + t * V)
+	if len(intersections) == 0:
+		return (0, 0)
+	print(intersections)
+	result = np.mean(intersections, axis=0)
+	print("RESULT: ", int(result[0]), int(result[1]))
+	return (int(result[0]), int(result[1]))
+
 
 def test_segmentation():
 	base_path = os.path.dirname(os.getcwd()) + "/line_follower/test_lines/stop"
@@ -156,15 +191,18 @@ def test_segmentation():
 		print(base_path + str(i) + ".png")
 		img = cv2.imread(base_path + str(i) + ".png")
 		mask = cd_color_segmentation(img,195)
-		image_print(img)
 		image_print(mask)
 		cdstP, lines = get_contours(mask)
 		image_print(cdstP)
-		lookahead_point = find_lookahead_point(lines)
-		image = cv2.circle(cdstP, (lookahead_point[0], lookahead_point[1]), radius=4, color=(255, 0, 0), thickness=-1)
-		print(i)
-		image_print(image)
+		h, w = cdstP.shape[:2]
+		print(cdstP.shape)
+		lookahead_point = find_lookahead_point(lines, w, h)
+		cv2.circle(cdstP, (w//2, h), radius=200, color=(0, 255, 255), thickness=4)
+		cv2.circle(cdstP, (lookahead_point[0], lookahead_point[1]), radius=20, color=(255, 255, 0), thickness=-1)
+
+		image_print(cdstP)
 		# cv2.imwrite("masks/mask" + str(i) + ".jpg", mask)
 
+test_segmentation()
 
 
