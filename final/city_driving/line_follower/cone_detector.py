@@ -43,6 +43,8 @@ class ConeDetector():
         base_image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
         rot_image = imutils.rotate(base_image, 180)
         (h,w) = rot_image.shape[:2]
+        center_img_y = h//2
+        center_img_x = w//2
 
         bb, mask = cd_color_segmentation(rot_image, None)
         if bb:
@@ -51,9 +53,7 @@ class ConeDetector():
             center_x, center_y = (brx - tlx)/2.0 + tlx, bry
 
             cone_location = Point()
-            center_img_y = h//2
-            center_img_x = w//2
-            thresh = 30
+            thresh = 20
             if center_x < center_img_x - thresh:
                 #rospy.loginfo("left")
                 cone_location.x = w - tlx 
@@ -75,7 +75,12 @@ class ConeDetector():
             self.debug_pub.publish(debug_msg)
         else:
             cone_location = Point()
-            cone_location.x, cone_location.y, cone_location.z = self.prev_px
+            x = self.prev_px[0]
+            if x > center_img_x:
+                cone_location.x = w
+            else:
+                cone_location.x = 0
+            cone_location.y, cone_location.z = self.prev_px[1:]
             self.cone_pub.publish(cone_location)
 
 if __name__ == '__main__':
