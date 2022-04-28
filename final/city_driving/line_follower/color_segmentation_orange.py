@@ -40,11 +40,28 @@ def cd_color_segmentation(img, y_cutoff=0):
     if img is None:
     	return None
     h,w = img.shape[:2]
-    start_y = 250
+    start_y = 200
     end_y = 330
+    top_mid_y = (end_y - start_y)//3 + start_y
+    bottom_mid_y = 2*(end_y - start_y)//3 + start_y
     cropped_im = img.copy()
+    # # Top rectangle
+    # cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
+    # # Bottom rectangle
+    # cv2.rectangle(cropped_im, (0, end_y), (w, h), (255, 255, 255), -1)
+    center_image_x = w//2
+    thresh = 100
+    # Top rectangle
     cv2.rectangle(cropped_im, (0,0), (w, start_y), (255, 255, 255), -1)
+    # Left rectangle
+    cv2.rectangle(cropped_im, (0,0), (center_image_x - thresh, top_mid_y), (255, 255, 255), -1)
+    # Right rectangle
+    cv2.rectangle(cropped_im, (center_image_x + thresh, 0), (w, top_mid_y), (255, 255, 255), -1)
+    # Long bottom rectangle
     cv2.rectangle(cropped_im, (0, end_y), (w, h), (255, 255, 255), -1)
+    # Small bottom rectangle
+    cv2.rectangle(cropped_im, (center_image_x - thresh, bottom_mid_y), (center_image_x + thresh, h), (255, 255, 255), -1)
+    # image_print(cropped_im)
 
     # Change color space to HSV
     hsv_img = cv2.cvtColor(cropped_im, cv2.COLOR_BGR2HSV)
@@ -84,29 +101,29 @@ def cd_color_segmentation(img, y_cutoff=0):
     return bounding_box, mask
 
 def test_segmentation():
-    base_path = os.path.abspath(os.getcwd()) + "/../test_imgs/"
-    end = 8
+    base_path = os.path.abspath(os.getcwd()) + "/"
+    # end = 8
     # base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve/"
     # end = 10
     # base_path = os.path.abspath(os.getcwd()) + "/test_straight_curve_2/"
     # end = 24
 
-    for i in range(0, end):
-        img = cv2.imread(base_path + 'stop' + str(i) + ".png")
+    for i in range(1, 2):
+        img = cv2.imread(base_path + 'city_clean' + str(i) + ".png")
         bounding_box, mask = cd_color_segmentation(img)
-        image_print(img)
+        # image_print(img)
         # h,w = img.shape[:2]
         # start_y = 250
         # end_y = 330
         # print(start_y, end_y)
         # cv2.rectangle(mask, (0,0), (w, start_y), (255, 255, 255), -1)
         # cv2.rectangle(mask, (0, end_y), (w, h), (255, 255, 255), -1)
-        cv2.rectangle(img, bounding_box[0], bounding_box[1], (255,0,0), 1)
+        cv2.rectangle(mask, bounding_box[0], bounding_box[1], (255,0,0), 1)
         tlx, tly = bounding_box[0] # top left
         brx, bry = bounding_box[1] # back right
         center_x, center_y = (brx - tlx)/2.0 + tlx, bry
-        cv2.circle(img, (int(center_x), int(center_y)), radius=4, color=(255, 0, 0), thickness=-1)
-        image_print(img)
+        cv2.circle(mask, (int(center_x), int(center_y)), radius=4, color=(255, 0, 0), thickness=-1)
+        image_print(mask)
         # cv2.imwrite(base_path + "/line_masks/mask" + str(i) + ".jpg", mask)
 
 # test_segmentation()
