@@ -59,13 +59,13 @@ class CityDriver:
         else:
             if distance > 5:
                 self.stop_signal = 0
-            elif (distance > 0.9 or distance < 5):
+            elif (distance > 2.2 and distance < 5) and self.stop_signal != 3:
                 self.stop_signal = 1
-            elif (distance > 0.75 or distance < 0.9):
+            elif (distance > 0.75 and distance < 2.2):
                 if self.stop_signal != 3:
                     self.stop_signal = 2
                     self.stopped_time = time.time()
-            elif distance < 0.75:
+            elif distance < 1.5:
                 self.stop_signal = 3
 
     def collision_callback(self, msg):
