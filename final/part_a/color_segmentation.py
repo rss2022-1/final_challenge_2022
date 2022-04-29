@@ -58,16 +58,17 @@ def cd_color_segmentation(img, y_cutoff=0):
 	cv2.drawContours(cropped_im, [l_triangle_cnt], 0, (0,0,0), -1)
         rec_y = h - 170
         t_offset_rec = 60
-        t_offset = 80
+        t_offset = 120
         rec_x_l = int(w/2 - t_offset_rec)
         rec_x_r = int(w/2 + t_offset_rec)
         left_x = int(rec_x_l - t_offset)
         right_x = int(rec_x_r + t_offset)
-        cv2.rectangle(cropped_im, (rec_x_l, rec_y), (rec_x_r, h), (0, 0, 0), -1)
+        cv2.rectangle(cropped_im, (0, h-80), (w, h), (0,0,0), -1)
+        #cv2.rectangle(cropped_im, (rec_x_l, rec_y), (rec_x_r, h), (0, 0, 0), -1)
         bot_r_triangle = np.array([(rec_x_r, rec_y), (rec_x_r, h), (right_x, h)])
         bot_l_triangle = np.array([(rec_x_l, rec_y), (rec_x_l, h), (left_x, h)])
-        cv2.drawContours(cropped_im, [bot_r_triangle], 0, (0, 0, 0), -1)
-        cv2.drawContours(cropped_im, [bot_l_triangle], 0, (0, 0, 0), -1)
+        #cv2.drawContours(cropped_im, [bot_r_triangle], 0, (0, 0, 0), -1)
+        #cv2.drawContours(cropped_im, [bot_l_triangle], 0, (0, 0, 0), -1)
 
 
 	# Change color space to HSV
@@ -75,7 +76,7 @@ def cd_color_segmentation(img, y_cutoff=0):
 
 	# Erode TODO: RE-TUNE THESE VALUES
 	img = cv2.erode(img, np.ones((8, 8), 'uint8'), iterations=1)
-	img = cv2.dilate(img, np.ones((16,16), 'uint8'), iterations=1)
+	img = cv2.dilate(img, np.ones((50,50), 'uint8'), iterations=1)
 
 	# Filter HSV values to get one with the cone color, creating mask while doing so
 	sensitivity = 80

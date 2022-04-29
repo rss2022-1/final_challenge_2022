@@ -29,8 +29,6 @@ class PurePursuit(object):
         self.wrap = 0
         self.wheelbase_length = 0.35
         self.p = .8
-        self.img_width = 640
-        self.img_height = 480
         self.bridge = CvBridge()
 
         # Subscribers and publishers
@@ -142,19 +140,22 @@ class PurePursuit(object):
         if len(intersections) == 1:
             #print("One intersection found")
             #rospy.loginfo("one intersection")
+            line_x_avg = int((lane_segments[0][1] + lane_segments[0][3]) / 2.)
             x = intersections[0][0]
-            if x <= 340:
+            if line_x_avg <= 360:
+                #rospy.loginfo("left")
                 # Left lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x += 15
+                x += 25
             else:
                 # Right lane
+                #rospy.loginfo("right")
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x -= 15
+                x -= 35
             return (x, self.px_lookahead, 0)
         else:
             #print(str(len(intersections)) + " intersections found")
-            return (int((intersections[0][0] + intersections[1][0])/2.), self.px_lookahead, 0)
+            return (int((intersections[0][0] + intersections[1][0])/2. - 5), self.px_lookahead, 0)
 
     def compute_steering_angle(self, lookahead_point):
         ''' Computes the steering angle for the robot to follow the given trajectory.
