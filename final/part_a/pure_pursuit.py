@@ -146,16 +146,16 @@ class PurePursuit(object):
                 #rospy.loginfo("left")
                 # Left lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x += 25
+                x += 15
             else:
                 # Right lane
                 #rospy.loginfo("right")
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x -= 35
+                x -= 45
             return (x, self.px_lookahead, 0)
         else:
             #print(str(len(intersections)) + " intersections found")
-            return (int((intersections[0][0] + intersections[1][0])/2. - 5), self.px_lookahead, 0)
+            return (int((intersections[0][0] + intersections[1][0])/2. - 10), self.px_lookahead, 0)
 
     def compute_steering_angle(self, lookahead_point):
         ''' Computes the steering angle for the robot to follow the given trajectory.
