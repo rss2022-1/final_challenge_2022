@@ -77,8 +77,8 @@ def cd_color_segmentation(img, y_cutoff=0):
     # orange_min = np.array([5, 170, 170],np.uint8)
     # orange_max = np.array([100, 255, 255],np.uint8)
     # Light orange
-    orange_min = np.array([1, 80, 100],np.uint8)
-    orange_max = np.array([50, 255, 255],np.uint8)
+    orange_min = np.array([1, 200, 200],np.uint8)
+    orange_max = np.array([30, 255, 255],np.uint8)
     mask = cv2.inRange(hsv_img, orange_min, orange_max)
     
     contours, hierarchy = cv2.findContours(mask,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[-2:]
