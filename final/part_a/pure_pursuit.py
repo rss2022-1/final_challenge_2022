@@ -25,7 +25,7 @@ class PurePursuit(object):
         self.speed = 4.0
         self.lookahead_mult = 7.0/8.0
         self.lookahead = self.lookahead_mult * self.speed
-        self.px_lookahead = 200
+        self.px_lookahead = 230
         self.wrap = 0
         self.wheelbase_length = 0.35
         self.p = .8
@@ -90,6 +90,7 @@ class PurePursuit(object):
         Pursues the trajectory by steering towards the lookahead point.
         """
         lookahead_point = np.array([msg.x, msg.y])
+        #rospy.loginfo(lookahead_point)
         steering_angle = self.compute_steering_angle(lookahead_point)
         msg = self.create_ackermann_msg(steering_angle)
         self.drive_pub.publish(msg)
@@ -146,16 +147,16 @@ class PurePursuit(object):
                 #rospy.loginfo("left")
                 # Left lane
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x += 25
+                x += 50
             else:
                 # Right lane
                 #rospy.loginfo("right")
                 # TODO: Use homography to see how many pixels to the right we need to shift our "center"
-                x -= 35
+                x -= 80
             return (x, self.px_lookahead, 0)
         else:
             #print(str(len(intersections)) + " intersections found")
-            return (int((intersections[0][0] + intersections[1][0])/2. - 5), self.px_lookahead, 0)
+            return (int((intersections[0][0] + intersections[1][0])/2. - 20), self.px_lookahead, 0)
 
     def compute_steering_angle(self, lookahead_point):
         ''' Computes the steering angle for the robot to follow the given trajectory.
@@ -172,7 +173,8 @@ class PurePursuit(object):
         delta = np.arctan(2 * self.wheelbase_length * np.sin(eta) / l_1) # from lecture notes 5-6
         sign = np.sign(np.cross(car_vector, reference_vector)) # determines correct steering direction
         #rospy.loginfo(sign * delta)
-        return sign * delta
+        return sign * delta - np.pi / 74.0
+        # return - np.pi / 68
 
     def line(self, p1, p2):
         A = (p1[1] - p2[1])

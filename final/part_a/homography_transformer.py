@@ -15,10 +15,10 @@ from geometry_msgs.msg import Point, Point32
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_IMAGE_PLANE = [[228, 122],
-                   [497, 115],
-                   [271, 143],
-                   [446, 143]] # dummy points
+PTS_IMAGE_PLANE = [[584, 49],
+                   [337, 138],
+                   [272, 101],
+                   [85, 62]] # dummy points
 ######################################################
 
 # PTS_GROUND_PLANE units are in inches
@@ -26,10 +26,10 @@ PTS_IMAGE_PLANE = [[228, 122],
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_GROUND_PLANE = [[21, -9.5],
-                    [21, 7.375],
-                    [32.5, -9.5],
-                    [32.5, 7.375]] # dummy points
+PTS_GROUND_PLANE = [[10, 7.5],
+                    [32, .4],
+                    [18, -3],
+                    [11, -9.25]] # dummy points
 ######################################################
 
 METERS_PER_INCH = 0.0254

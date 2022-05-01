@@ -44,10 +44,13 @@ class SignDetector:
         depth_img = np.frombuffer(img_msg.data, dtype=np.float32).reshape(img_msg.height, img_msg.width)
         if self.sign_bounding_box != (): # stop sign has been detected
             if self.use_depth:
-                dist = self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box)
-                self.publisher.publish(self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box))
+                #dist = self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box)
+                #self.publisher.publish(self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box))
+                self.publisher.publish(0.7)
             else:
                 self.publisher.publish(self.get_dist_to_sign_from_area(self.sign_bounding_box))
+        else: # no stop sign
+            self.publisher.publish(1000)
     
     def box_callback(self, box_msg):
         self.sign_bounding_box = box_msg.data

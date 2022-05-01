@@ -59,7 +59,7 @@ class CityDriver:
         else:
             if distance > 5:
                 self.stop_signal = 0
-            elif (distance > 2.2 and distance < 5) and self.stop_signal != 3:
+            elif (distance > 2.2 and distance < 5):
                 self.stop_signal = 1
             elif (distance > 0.75 and distance < 2.2):
                 if self.stop_signal != 3:
@@ -155,17 +155,17 @@ class CityDriver:
                 self.create_message(self.normal_speed, self.steering_angle)
                 self.drive_pub.publish(self.drive_message)
             # Slow down
-            elif self.stop_signal == 1:
-                self.create_message(self.slow_speed, self.steering_angle)
-                self.drive_pub.publish(self.drive_message)
+            #elif self.stop_signal == 1:
+                #self.create_message(self.slow_speed, self.steering_angle)
+                #self.drive_pub.publish(self.drive_message)
             # Stop
             elif self.stop_signal == 2:
                 self.create_message(0, 0)
                 self.drive_pub.publish(self.drive_message)
             # Keep driving slowly
-            elif self.stop_signal == 3:
-                self.create_message(self.slow_speed, self.steering_angle)
-                self.drive_pub.publish(self.drive_message)
+            #elif self.stop_signal == 3:
+                #self.create_message(self.slow_speed, self.steering_angle)
+                #self.drive_pub.publish(self.drive_message)
 
 
     def create_message(self, velocity, steering_angle):
