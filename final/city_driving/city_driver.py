@@ -97,11 +97,14 @@ class CityDriver:
         """
         relative_x = msg.x
         relative_y = msg.y
-        velocity = self.normal_speed
+        relative_z = msg.z
         #rospy.loginfo(msg)
         #rospy.loginfo("got cone msg")
+        if relative_z == -1:
+            self.steering_angle = - self.compute_steering_angle(relative_x, relative_y)
+            self.drive_controller(-self.normal_speed)
         # Cone too far in front
-        if relative_x - self.parking_distance > self.parking_distance:
+        elif relative_x - self.parking_distance > self.parking_distance:
             #rospy.loginfo("go forward")
             error = relative_y
             output = self.pid_controller(error)
@@ -109,11 +112,11 @@ class CityDriver:
                 angle = min(0.34, output)
             elif output <= 0:
                 angle = max(-0.34, output)
-            angle = self.compute_steering_angle(relative_x+.3, relative_y)
+            angle = self.compute_steering_angle(relative_x, relative_y) # Used to have + .3, no clue why, but here is a note just in case
             self.steering_angle = angle
         # Cone too close
         # Do we even need this part? Needed for parking controller but prob not line follower
-        self.drive_controller()
+        self.drive_controller(self.normal_speed)
 
     def pid_controller(self, error):
         curr_time = time.time()
@@ -137,10 +140,12 @@ class CityDriver:
         sign = np.sign(np.cross(car_vector, reference_vector))
         return sign * delta - np.pi / 68.0
 
-    def drive_controller(self):
+    def drive_controller(self, velocity):
         """
         Master logic for city driving
         """
+
+
         # Priority 1: Collision checking
         # Back straight up if about to collide
         if self.collision_signal == 1:
@@ -151,7 +156,7 @@ class CityDriver:
             # Keep going
             if self.stop_signal == 0:
                 #rospy.loginfo("driving")
-                self.create_message(self.normal_speed, self.steering_angle)
+                self.create_message(velocity, self.steering_angle)
                 self.drive_pub.publish(self.drive_message)
             # Slow down
             #elif self.stop_signal == 1:
