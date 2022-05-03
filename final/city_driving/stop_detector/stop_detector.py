@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import cv2
 import rospy
 
@@ -20,7 +22,7 @@ class SignDetector:
         self.depth_subscriber = rospy.Subscriber("/zed/zed_node/depth/depth_registered", Image, self.depth_callback)
         #self.detector = StopSignDetector(threshold=0)
         self.publisher = rospy.Publisher("/stop_sign_distance", Float32, queue_size=10) # distance to stop sign in meters
-        self.sign_bounding_box = ()
+        self.sign_bounding_box = (0.0,0.0,0.0,0.0)
         self.dist_measurements = [0.8636, 1.1938, 1.6256] # distances away in meters stop sign images taken on bot
         self.area_measurements = [7246.09, 3515.56, 1856.76] # area of stop sign bounding box in pixels from stop sign images
         
@@ -42,11 +44,11 @@ class SignDetector:
     '''
     def depth_callback(self, img_msg):
         depth_img = np.frombuffer(img_msg.data, dtype=np.float32).reshape(img_msg.height, img_msg.width)
-        if self.sign_bounding_box != (): # stop sign has been detected
+        if self.sign_bounding_box != (0.0,0.0,0.0,0.0): # stop sign has been detected
             if self.use_depth:
                 #dist = self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box)
                 #self.publisher.publish(self.get_dist_to_sign_from_depth(depth_img, self.sign_bounding_box))
-                self.publisher.publish(0.7)
+                self.publisher.publish(0.8)
             else:
                 self.publisher.publish(self.get_dist_to_sign_from_area(self.sign_bounding_box))
         else: # no stop sign
@@ -54,6 +56,7 @@ class SignDetector:
     
     def box_callback(self, box_msg):
         self.sign_bounding_box = box_msg.data
+        # rospy.loginfo(box_msg.data)
 
     def get_coords_from_box(self, bounding_box):
         """

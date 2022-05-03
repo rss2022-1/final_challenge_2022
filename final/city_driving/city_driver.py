@@ -54,7 +54,7 @@ class CityDriver:
         # Stops for 1 second at sign before resuming
         if self.stop_signal == 2:
             curr_time = time.time()
-            if curr_time - self.stopped_time > 1:
+            if curr_time - self.stopped_time > 2:
                 self.stop_signal = 3
         else:
             if distance > 5:
