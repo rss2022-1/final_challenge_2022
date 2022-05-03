@@ -80,7 +80,7 @@ class ConeDetector():
                 cone_location.x = w
             else:
                 cone_location.x = 0
-            cone_location.y, cone_location.z = self.prev_px[1:]
+            cone_location.y, cone_location.z = -10000, self.prev_px[2] # if we can't see stuff indicat to other file we must back up and turn
             self.cone_pub.publish(cone_location)
 
 if __name__ == '__main__':

@@ -100,7 +100,6 @@ class CityDriver:
         velocity = self.normal_speed
         #rospy.loginfo(msg)
         #rospy.loginfo("got cone msg")
-
         # Cone too far in front
         if relative_x - self.parking_distance > self.parking_distance:
             #rospy.loginfo("go forward")
@@ -136,7 +135,7 @@ class CityDriver:
         eta = np.arccos(np.dot(car_vector, reference_vector)/(np.linalg.norm(car_vector)*l_1))
         delta = np.arctan(2*.35*np.sin(eta)/l_1)
         sign = np.sign(np.cross(car_vector, reference_vector))
-        return sign * delta
+        return sign * delta - np.pi / 68.0
 
     def drive_controller(self):
         """
