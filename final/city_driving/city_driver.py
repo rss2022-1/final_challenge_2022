@@ -102,7 +102,7 @@ class CityDriver:
         #rospy.loginfo("got cone msg")
         if relative_z == -1:
             self.steering_angle = - self.compute_steering_angle(relative_x, relative_y)
-            self.drive_controller(-self.normal_speed)
+            self.drive_controller(-self.slow_speed)
         # Cone too far in front
         elif relative_x - self.parking_distance > self.parking_distance:
             #rospy.loginfo("go forward")
@@ -112,11 +112,11 @@ class CityDriver:
                 angle = min(0.34, output)
             elif output <= 0:
                 angle = max(-0.34, output)
-            angle = self.compute_steering_angle(relative_x, relative_y) # Used to have + .3, no clue why, but here is a note just in case
+            angle = self.compute_steering_angle(relative_x + .3, relative_y) # Used to have + .3, no clue why, but here is a note just in case
             self.steering_angle = angle
         # Cone too close
         # Do we even need this part? Needed for parking controller but prob not line follower
-        self.drive_controller(self.normal_speed)
+            self.drive_controller(self.normal_speed)
 
     def pid_controller(self, error):
         curr_time = time.time()

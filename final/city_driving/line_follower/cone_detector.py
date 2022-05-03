@@ -47,7 +47,7 @@ class ConeDetector():
         center_img_x = w//2
 
         bb, mask = cd_color_segmentation(rot_image, None)
-        if bb:
+        if bb[0][1] != 0:
             tlx, tly = bb[0] # top left
             brx, bry = bb[1] # back right
             center_x, center_y = (brx - tlx)/2.0 + tlx, bry
